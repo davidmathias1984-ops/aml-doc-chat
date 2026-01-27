@@ -1,0 +1,57 @@
+//load the engage gallery as module so it can use photoswipe
+
+const EngageScriptLoader = (function () {
+
+
+    function sessionID() {
+        //ensures that the main gallery file is loaded with a new session ID each session
+        if (sessionStorage.getItem('photoswipeSessionId')) return sessionStorage.getItem('photoswipeSessionId');
+
+        const sId = Math.floor(Math.random() * 1000000000) + 1;
+        sessionStorage.setItem('photoswipeSessionId', sId);
+        return sId;
+    };
+
+    function loadScript(url, treatAsModule) {
+
+        return new Promise(function (resolve, reject) {
+            let script = document.createElement('script');
+            script.src = `${url}?v=${sessionID()}`;
+            script.async = false;
+            if (treatAsModule) script.type = "module";
+            script.onload = function () {
+                resolve(url);
+            };
+            script.onerror = function () {
+                reject(url);
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    //load a bunch of scripts and then run the callback
+    function loadScripts(arrayOfScripts, treatAsModules, callBack, errorFunction) {
+
+        // save all Promises as array
+        let promises = [];
+        arrayOfScripts.forEach(function (url) {
+            promises.push(loadScript(url, treatAsModules));
+        });
+
+        Promise.all(promises)
+            .then(function () {
+                callBack && callBack();
+            }).catch(function (script) {
+                errorFunction && errorFunction();
+            });
+    }
+
+    return {
+        load: loadScripts
+    };
+
+})();
+
+
+
+EngageScriptLoader.load(["/sorce/beacon/pijs/Media/Gallery/engage_gallery.js"], true);

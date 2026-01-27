@@ -1,0 +1,79 @@
+let ArticlesUnread = {
+
+	filterAccessedArticles: function (obj) {
+		$pi = $(obj).closest('div.pi')
+
+		if (obj.checked == true) {
+			$pi.addClass("hide_accessed")
+		} else {
+			$pi.removeClass("hide_accessed")
+		}
+	},
+
+
+	processArticles: function () {
+
+		let isSPV = false;
+		let reload = false;
+
+		//check if we are viewing a single page view of news
+		let h = document.location.href.toLowerCase();
+		isSPV = h.indexOf("singlepageview.aspx") != -1 && h.indexOf("contenttype=news") != -1 ? 1 : 0;
+
+
+		if (isSPV) {
+			reload = true;
+		}
+
+		let accessedArticles = sessionStorage.getItem("article_accessed");
+		let url = "/sorce/beacon/Pageitem/Articles/getArticlesUnread.aspx";
+
+		if (accessedArticles === null || reload) {
+			$.post(url, function (response) {
+				accessedArticles = response
+				sessionStorage.setItem("article_accessed", response);
+
+				ArticlesUnread.setArticleAccessedStyle();
+			})
+		} else {
+			ArticlesUnread.setArticleAccessedStyle();
+		}
+	},
+
+	setArticleAccessedStyle: function () {
+
+		let $newsLink = $("div[class*='highlight-unread-news' i] a[href*='contentType=News'");
+		const $accessed_articles = sessionStorage.getItem("article_accessed").split(',')
+
+
+		$newsLink.each(function () {
+			let $article = $(this);
+			let $urlParams = new URLSearchParams($article.attr('href'));
+
+			let $newsArticle = $(this).closest('div[class*="highlight-unread-news" i] article[pi_type~="News"], div.pi[class*="highlight-unread-news" i] article[pi_type="Top three news with overlay"]')
+			if ($accessed_articles.indexOf($urlParams.get('row')) == -1) {
+				$newsArticle.removeClass("news_read")
+				$newsArticle.addClass("news_unread")
+			} else {
+				$newsArticle.addClass("news_read")
+				$newsArticle.removeClass("news_unread")
+			}
+
+		});
+
+	},
+
+	init: function () {
+		ArticlesUnread.processArticles();
+
+	}
+}
+
+$(document).on('BEACON:PAGE:ready', function () {
+	ArticlesUnread.init();
+});
+
+$(document).on('BEACON:PII:allUpdate', function () {
+	ArticlesUnread.init();
+
+});

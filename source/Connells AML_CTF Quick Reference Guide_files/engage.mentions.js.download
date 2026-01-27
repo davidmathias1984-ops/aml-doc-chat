@@ -1,0 +1,371 @@
+var EngageMentions = {
+    accountConnected: false,
+    retrievedMentionsTeamsInfo: undefined,
+    zindex: undefined,
+    GroupQuery: function (instantSearch) {
+        if (instantSearch === undefined) {
+            instantSearch = false;
+        }
+        $('.autocomplete-textarea').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        var filterType = "GROUP";
+        QueryFunction(filterType, instantSearch);
+
+    },
+
+    UserQuery: function (instantSearch) {
+        if (instantSearch === undefined) {
+            instantSearch = false;
+        }
+        $('.autocomplete-textarea').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        var filterType = "USER";
+        QueryFunction(filterType, instantSearch);
+    },
+
+    TeamsQuery: function (instantSearch) {
+        if (instantSearch === undefined) {
+            instantSearch = false;
+        }
+        $('.autocomplete-textarea').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        var filterType = "TEAMS";
+        QueryFunction(filterType, instantSearch);
+    },
+
+    AllQuery: function (instantSearch, zindex) {
+        var isClassicForms = false; var findTop = top.findTop;
+        if (instantSearch === undefined) {
+            instantSearch = false;
+        }
+        if (zindex !== undefined) {
+            this.zindex = zindex;
+        }
+        /*check to see if we are in classic forms*/
+        if (findTop !== undefined) {
+            isClassicForms = true;
+            if (findTop().BEACON == undefined) {
+                console.log("For the mentions popup to load with office365 results on a classic form, the form must be loaded in or launched by a frameset or sorcelaunch");
+            } else {
+                if (BEACON === undefined) {
+                    BEACON = findTop().BEACON;
+                }
+            }
+        }
+        /*check we already have teams infomation*/
+        if (EngageMentions.retrievedMentionsTeamsInfo == null) {
+            var ConnectedAccount = BEACON.page.connectedAccounts['AuthentiationProviderStatuses'];
+            for (var p = 0; p < ConnectedAccount.length; p++) {
+                if (ConnectedAccount[p].AuthProvider === "Microsoft Azure AD") {
+                    EngageMentions.accountConnected = (ConnectedAccount[p].Status == "Connected");
+                }
+            }
+            if (EngageMentions.accountConnected) {
+                //call the teams search
+                var mentionsData = sessionStorage.getItem("teamsMentionsInfo");
+                if (!mentionsData || mentionsData == "undefined") {
+                    var TeamsMentionsGraphCallNumber = 20;
+                    GetTeamsMentionInfo(TeamsMentionsGraphCallNumber);
+                }
+                else {
+                    EngageMentions.retrievedMentionsTeamsInfo = JSON.parse(sessionStorage.getItem("teamsMentionsInfo"));
+                }
+            }
+            else {
+                EngageMentions.retrievedMentionsTeamsInfo = "disconnected";
+            }
+        }
+
+        if (isClassicForms) {
+            EngageMentions.AllQueryInClassicForms(instantSearch);
+        } else {
+            EngageMentions.AllQueryInPage(instantSearch);
+        }
+    },
+    AllQueryInPage: function (instantSearch) {
+        $('.pi[pii=true]').each(function () {
+            var $pii = $(this);
+            EngageMentions.AllQueryPageItem($pii, instantSearch);
+        });
+    },
+    AllQueryPageItem: function ($pii, instantSearch) {
+        $pii.find('.autocomplete-textarea').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        $pii.find('.autocomplete-textarea-mentions').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        var filterType = "ALL";
+        QueryFunction(filterType, instantSearch, $pii);
+        QueryFunctionMentions(filterType, instantSearch, $pii);
+        /*only add on page item update event once*/
+        if ($pii.data("mentionsOnUpdate") !== true) {
+            $pii.data("mentionsOnUpdate", true);
+            $pii.on('BEACON:PII:allUpdate', function () {
+                EngageMentions.AllQueryPageItem($pii, instantSearch);
+            });
+        }
+    },
+    AllQueryInClassicForms: function (instantSearch) {
+        $('.autocomplete-textarea').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        $('.autocomplete-textarea-mentions').textcomplete('destroy', {
+            onKeydown: function (e, commands) {
+                if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                    return commands.KEY_ENTER;
+                }
+            }
+        });
+        var filterType = "ALL";
+        QueryFunction(filterType, instantSearch);
+        QueryFunctionMentions(filterType, instantSearch);
+    }
+};
+
+function GetTeamsMentionInfo(GraphCallNum) {
+    //Pending ASHX calls
+    var ashxURL;
+
+    data = { GraphCall: GraphCallNum, PageNumber: null, InitialResults: null, IncrementalResults: null, PostData: null};
+
+    //Do the full save ASHX
+    ashxURL = "/sorce/beacon/PageItem/MSGraph/MSGraphPageItemCalls.ashx";
+    $.ajax({
+        url: ashxURL
+        , async: true
+        , method: 'POST'
+        , dataType: "json"
+        , data: JSON.stringify(data)
+        , contentType: "application/json"
+        , complete: function (response) {
+            if (response.status == "200") {
+                sessionStorage.setItem("teamsMentionsInfo", JSON.stringify(response['responseJSON']));
+                EngageMentions.retrievedMentionsTeamsInfo = response['responseJSON'];
+                EngageMentions.AllQuery();
+                return response['responseJSON'];
+            }
+            else {
+                //Connection error 
+                EngageMentions.retrievedMentionsTeamsInfo = "disconnected";
+            }
+
+            return response;
+        }
+        , error: function (xhr, status, errorthrown) {
+            EngageMentions.retrievedMentionsTeamsInfo = "disconnected";
+            if (xhr.responseText) {
+                var connectionStatusChanged = false;
+                var ConnectedAccount = BEACON.page.connectedAccounts['AuthentiationProviderStatuses'];
+                for (var p = 0; p < ConnectedAccount.length; p++) {
+                    if (ConnectedAccount[p].AuthProvider === "Microsoft Azure AD") {
+                        if (xhr.responseText === "Reconnect" || xhr.responseText === "Disconnected") {
+                            if (ConnectedAccount[p].Status !== xhr.responseText) {
+                                ConnectedAccount[p].Status = xhr.responseText;
+                                connectionStatusChanged = true;
+                            }
+                        }
+                    }
+                }
+                if (connectionStatusChanged) {
+                    BEACON.accountConnections.init();
+                }
+                return xhr.responseText;
+
+            }
+        }
+    });
+}
+
+function QueryFunction(filterType, instantSearch, $pii) {
+    var autoCompleteConfig = [
+        {
+            id: 'mention',
+            match: /\B@([\w.]+)$/, 
+            search: function (term, callback) {
+                if (term.length >= 2) {
+                    switch (filterType) {
+                        case 'ALL':
+                            $.getJSON('/sorce/beacon/mentionsearch.aspx', { q: term, filterType: filterType }).done(function (resp) { callback(CompareSearchResultSets(resp, FilterTeamsInfo(term, EngageMentions.retrievedMentionsTeamsInfo), term)); });
+                            break;
+                        case 'GROUP':
+                            $.getJSON('/sorce/beacon/mentionsearch.aspx', { q: term, filterType: filterType }).done(function (resp) { callback(resp); });
+                            break;
+                        case 'USER':
+                            $.getJSON('/sorce/beacon/mentionsearch.aspx', { q: term, filterType: filterType }).done(function (resp) { callback(resp); });
+                            break;
+                        case 'TEAMS':
+                            callback(FilterTeamsInfo(term, EngageMentions.retrievedMentionsTeamsInfo));
+                            break;
+                    }
+                }
+                else {
+                    callback([]);
+                }
+            },
+            template: function (value) {
+                var imagePath = value.image;
+                if (imagePath == "" && value.btype == "u")
+                    imagePath = "/sorce/beacon/images/Profile-default.jpg";
+                else if (imagePath == "" && value.btype == "g")
+                    imagePath = "/sorce/beacon/images/group-profile-image.jpg";
+                else if (value.btype == "TEAMS")
+                    return '<img class="teamsChannelIcon"></img><div class="mentionableData">' + value.name + ' <span class="profile">(@' + value.profile + ')</span><span class="email">' + value.email + '</span></div>';
+                var favFlair = "";
+                if (value.btype === "g") {
+                    value.email = "Group";
+                }
+                if (value.favourite) {
+                    favFlair = "<div class='glyphicons beaconStar colourFavourite_1'></div>";
+                }
+                return favFlair + '<img class="mentionableImage" src="/sorce/tools/sampleimg.aspx?mode=crop&width=60&height=60&imagepath=' + encodeURIComponent(imagePath) + '"></img><div class="mentionableData">' + value.name + ' <span class="profile">(@' + value.profile + ')</span><span class="email">' + value.email + '</span></div>';
+            },
+            replace: function (value) {
+                return '@' + value.profile + ' ';
+            },
+            index: 1
+        }
+    ];
+    var autoCompleteEvents = {
+        onKeydown: function (e, commands) {
+            if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                return commands.KEY_ENTER;
+            }
+        },
+        zIndex: EngageMentions.zindex
+    };
+    if ($pii === undefined) {
+        $('.autocomplete-textarea').textcomplete(autoCompleteConfig, autoCompleteEvents, instantSearch);
+    } else {
+        $pii.find('.autocomplete-textarea').textcomplete(autoCompleteConfig, autoCompleteEvents, instantSearch);
+    }
+}
+
+function FilterTeamsInfo(term, TeamInfo) {
+    var filteredTeamsInfo = [];
+    var infoIndex = 0;
+    if (TeamInfo == null || TeamInfo == "disconnected")
+    { return null; }
+    else {
+        for (var teamChannel = 0; TeamInfo.length > teamChannel && filteredTeamsInfo.length < 4; teamChannel++) {
+            const regex = new RegExp(term, 'gi'); // correct way
+            var thing = (TeamInfo[teamChannel].profile).match(regex);
+            if (thing) {
+                filteredTeamsInfo[infoIndex] = TeamInfo[teamChannel];
+                infoIndex++;
+            }
+        }
+        return filteredTeamsInfo.sort(function (a, b) {
+            return a.profile.indexOf(term) - b.profile.indexOf(term);
+        });
+    }
+}
+
+function CompareSearchResultSets(teamsResults, sorceDbResults, term) {
+    if (teamsResults != null && sorceDbResults != null) {
+        var totalResults = teamsResults.concat(sorceDbResults);
+        totalResults.sort(function (a, b) {
+            return a.profile.indexOf(term) - b.profile.indexOf(term);
+        });
+        return totalResults.slice(0, 10);
+    }
+    else if (teamsResults == null) {
+        return sorceDbResults;
+    }
+    else if (sorceDbResults == null) {
+        return teamsResults.slice(0, 10);
+    }
+}
+
+
+function QueryFunctionMentions(filterType, instantSearch, $pii) {
+    var autoCompleteConfig = [
+        {
+            id: 'mentionOnly',
+            match: /\B@([\w.]+)$/, 
+            search: function (term, callback) {
+                if (term.length >= 2) {
+                    switch (filterType) {
+                        case 'ALL':
+                            $.getJSON('/sorce/beacon/mentionsearch.aspx', { q: term, filterType: filterType }).done(function (resp) { callback(CompareSearchResultSets(resp, FilterTeamsInfo(term, EngageMentions.retrievedMentionsTeamsInfo), term)); });
+                            break;
+                        case 'GROUP':
+                            $.getJSON('/sorce/beacon/mentionsearch.aspx', { q: term, filterType: filterType }).done(function (resp) { callback(resp); });
+                            break;
+                        case 'USER':
+                            $.getJSON('/sorce/beacon/mentionsearch.aspx', { q: term, filterType: filterType }).done(function (resp) { callback(resp); });
+                            break;
+                        case 'TEAMS':
+                            callback(FilterTeamsInfo(term, EngageMentions.retrievedMentionsTeamsInfo));
+                            break;
+                    }
+                }
+                else {
+                    callback([]);
+                }
+            },
+            template: function (value) {
+                var imagePath = value.image;
+                if (imagePath == "" && value.btype == "u")
+                    imagePath = "/sorce/beacon/images/Profile-default.jpg";
+                else if (imagePath == "" && value.btype == "g")
+                    imagePath = "/sorce/beacon/images/group-profile-image.jpg";
+                else if (value.btype == "TEAMS") {
+                    return '<img class="teamsChannelIcon"></img><div class="mentionableData">' + value.name + ' <span class="profile">(@' + value.profile + ')</span><span class="email">' + value.email + '</span></div>';
+                }
+                var favFlair = "";
+                if (value.btype === "g") {
+                    value.email = "Group";
+                }
+                if (value.favourite) {
+                    favFlair = "<div class='glyphicons beaconStar colourFavourite_1'></div>";
+                }
+                return favFlair + '<img class="mentionableImage" src="/sorce/tools/sampleimg.aspx?mode=crop&width=60&height=60&imagepath=' + encodeURIComponent(imagePath) + '"></img><div class="mentionableData">' + value.name + ' <span class="profile">(@' + value.profile + ')</span><span class="email">' + value.email + '</span></div>';
+            },
+            replace: function (value) {
+                return "@" + value.profile;
+            },
+            index: 1
+        }
+    ];
+    var autoCompleteEvents = {
+        onKeydown: function (e, commands) {
+            if (e.ctrlKey && e.keyCode === 74) { // CTRL-J
+                return commands.KEY_ENTER;
+            }
+        },
+        zIndex: EngageMentions.zindex
+    };
+    if ($pii === undefined) {
+        $('.autocomplete-textarea-mentions').textcomplete(autoCompleteConfig, autoCompleteEvents, instantSearch);
+    } else {
+        $pii.find('.autocomplete-textarea-mentions').textcomplete(autoCompleteConfig, autoCompleteEvents, instantSearch);
+    }
+}

@@ -1,0 +1,857 @@
+/*
+* "BeaconCore" CSS - System Stylesheet
+* Warning - This stylesheet should not be modified for the purpose of site customisation. 
+* This stylesheet will be overwritten during Engage updates. 
+* Please use "Customstyle.css" to customise your site.
+* 
+* The core stylesheet contols the reset and base functionality of the responsive system.
+*
+* Reset Styles created with a little help from: http://html5doctor.com/html-5-reset-stylesheet/
+*/
+
+
+
+/* Reset Styles - Used to help standardise Browser default element styling */
+/* --------------------------------------------------------------------------------------------------- */
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    vertical-align: baseline;
+}
+
+body {
+    line-height: 1;
+    font-size: 100%;
+}
+
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+
+a {
+    margin: 0;
+    padding: 0;
+    /*  font-size:100%; */
+    vertical-align: baseline;
+    background: transparent;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+input, select {
+    vertical-align: middle;
+}
+
+label {
+    cursor: inherit;
+}
+
+img {
+    /* This has had to go back to max-width until css is reviewed */
+    max-width: 100%;
+}
+
+
+/* Core Styles - These are Beacon Specific style for Core Functionality */
+/* --------------------------------------------------------------------------------------------------- */
+
+/* Core Styles - Comments and rating */
+
+.clearx {
+    background-position: -139px 0px;
+    width: 12px;
+    height: 12px;
+}
+
+.stars {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    vertical-align: middle;
+    background: url('/sorce/Beacon/images/stars.png') no-repeat;
+    margin-right: 5px;
+}
+
+.star_0 {
+    background-position: -226px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.star_1 {
+    background-position: -213px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.star_2 {
+    background-position: -200px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.star_3 {
+    background-position: -187px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.star_4 {
+    background-position: -174px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.star_5 {
+    background-position: -161px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_0 {
+    background-position: -65px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_ {
+    background-position: -65px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_5 {
+    background-position: -52px -20px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_10 {
+    background-position: -52px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_15 {
+    background-position: -39px -20px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_20 {
+    background-position: -39px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_25 {
+    background-position: -26px -20px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_30 {
+    background-position: -26px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_35 {
+    background-position: -13px -20px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_40 {
+    background-position: -13px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_45 {
+    background-position: 0px -20px;
+    width: 65px;
+    height: 13px;
+}
+
+.average_50 {
+    background-position: 0px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.myStar_0:hover {
+    background-position: -225px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.myStar_1:hover {
+    background-position: -212px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.myStar_2:hover {
+    background-position: -199px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.myStar_3:hover {
+    background-position: -186px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.myStar_4:hover {
+    background-position: -173px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.myStar_5:hover {
+    background-position: -160px 0px;
+    width: 65px;
+    height: 13px;
+}
+
+.contentCommentRatingButton {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+    cursor: pointer;
+    float: left;
+    height: 100%;
+    width: 20%;
+    color: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+    .contentCommentRatingButton:focus {
+        background: url('/sorce/Beacon/images/stars.png') no-repeat;
+        background-position: -212px 0px;
+    }
+
+/* display none item for transition elements */
+.displayNone {
+    display: none !important;
+}
+
+.visuallyhidden {
+    position: absolute;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    width: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+}
+
+/* Renders bullets and numbers in html regions and the summernote editor */
+
+.contentBody ol, .note-editable > ol {
+    padding-left: 30px;
+}
+
+.contentBody ul, .note-editable > ul {
+    padding-left: 30px;
+}
+
+/* Beacon toolbar and primary nav */
+/* Toolbar spacer moves the body down so it isn't under the toolbar */
+.beaconToolbarSpacer {
+    height: 35px;
+}
+/*Set to z-index to 99997 to be behind popups and notifications*/
+.beaconToolbar {
+    background-color: #000;
+    position: fixed;
+    z-index: 99997;
+    min-height: 35px;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    color: #fff;
+}
+
+.beaconToolbarItemWrapper {
+    display: inline-block;
+    min-height: 35px;
+    box-sizing: border-box;
+    vertical-align: top;
+}
+
+    .beaconToolbarItemWrapper .glyphicons:before {
+        padding-top: 3px;
+    }
+
+.beaconToolbarItemWrapperEditPage {
+    padding-top: 6px;
+    padding-right: 13px;
+    padding-left: 13px;
+}
+
+.beaconToolbarItemWrapperFavourite {
+    padding-top: 6px;
+    padding-right: 13px;
+    padding-left: 13px;
+}
+
+.beaconToolbarItemWrapperFavourite .glyphicons.beaconStar {
+    font-size: 17px;
+}
+
+.beaconToolbarItemWrapperAlerts {
+    padding-top: 6px;
+    padding-right: 13px;
+    padding-left: 13px;
+}
+
+    .beaconToolbarItemWrapperAlerts.some {
+        background-color: #E23C54;
+    }
+
+.beaconToolbarItemWrapperHome {
+    padding-top: 6px;
+    padding-left: 10px;
+}
+
+.beaconToolbarItemWrapperCogmenu {
+    padding-top: 6px;
+    padding-left: 13px;
+    padding-right: 13px;
+}
+
+.beaconToolbarAddContentLI .glyphicons.cogwheel {
+    font-size: 16px;
+}
+
+.beaconToolbarItemWrapperSearch {
+    padding-top: 6px;
+    padding-left: 13px;
+    padding-right: 13px;
+}
+
+.beaconToolbar_searchBox {
+    border-radius: 20px;
+    padding: 0px 10px 3px 10px;
+    border: 0;
+    margin-right: 10px;
+    width: 200px;
+    height: 25px;
+    margin-top: -3px;
+}
+
+.glyphicons.beaconToolbar_searchButton:before {
+    content: "\E028";
+}
+
+.beaconToolbarInner {
+}
+
+.ToolbarInnerRight {
+    display: inline-block;
+    float: right;
+}
+
+.beaconToolbarLink {
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+}
+
+.beaconToolbarNavsUL {
+    display: inline-block;
+    list-style-type: none;
+}
+
+.beaconToolbarAddContentLI > UL {
+    display: none;
+    list-style-type: none;
+    margin-top: 15px;
+    background-color: #23242B;
+    border: 1px solid #555;
+    border-radius: 3px;
+    z-index: 1003;
+}
+
+.beaconToolbarAddContentLIItem {
+    padding: 5px 15px 5px 15px;
+}
+
+.beaconToolbarAddContentUL {
+    padding-right: 15px;
+    position: absolute;
+    text-align: left;
+    max-height: 400px;
+    white-space: nowrap;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+
+.ToolbarHomeA {
+}
+
+.ToolbarAlertsLabel {
+    display: inline-block;
+}
+
+.ToolbarAlertsCount {
+    display: inline-block;
+}
+
+.ToolbarAlertsCountNone {
+    display: inline-block;
+}
+
+.ToolbarAlertsCountSome {
+    display: inline-block;
+}
+
+/* Toolbar account connection notifications*/
+.beaconToolbarItemWrapperAccountNotifications {
+    padding-top: 8px;
+    padding-right: 13px;
+    padding-left: 13px;
+    background-color: #8F949B;
+}
+
+    .beaconToolbarItemWrapperAccountNotifications.some {
+        background-color: #E23C54;
+    }
+
+.ToolbarAccountNotificationsLabel {
+    display: inline-block;
+}
+
+    .ToolbarAccountNotificationsLabel:before {
+        content: '';
+        display: inline-block;
+        height: 1rem;
+        width: 1rem;
+        background-image: url('/sorce/beacon/css/images/Toolbar-connections.svg');
+    }
+/*  Needed to add vertical align top to ensure the text lined up*/
+.ToolbarAccountNotificationsCount {
+    display: inline-block;
+    vertical-align: top;
+}
+/* - shade*/
+.accountNotificationsShadeContainer {
+    width: 330px;
+    top: 45px;
+    right: 45px;
+    position: fixed;
+    background-color: #23242B;
+    border: 1px solid #4c4f56;
+    z-index: 1003;
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+    box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+}
+
+.accountNotificationsShadeHeader,
+.accountNotificationsShadeFooter {
+    background-color: #2F313A;
+    color: #ffffff;
+    padding: 10px;
+}
+
+.accountNotificationsShadeFooter {
+    text-align: right;
+}
+
+.accountNotificationsShadeContent {
+    min-height: 40px;
+    padding-left: 5px;
+    padding-bottom: 10px;
+}
+
+.accountNotificationContent {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.accountNotificationObject {
+    min-height: 80px;
+    margin-top: 10px;
+    margin-right: 5px;
+    padding-top: 5px;
+    padding-bottom: 10px;
+    padding-left: 5px;
+}
+
+.accountNotification_none {
+    padding-top: 15px;
+    padding-bottom: 10px;
+    text-align: center;
+    font-size: 0.8rem;
+}
+/* - content styling*/
+.accountNotificationsManageLink {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.81rem;
+}
+
+.accountNotificationContent.iconSection {
+    padding-right: 10px;
+}
+
+.accountNotificationIcon.accountConnectionIcon {
+    content: '';
+    padding: 0px 40px 40px 0;
+    border-radius: 100%; /*We want it to look like a circle*/
+    background-color: #E23C54; /*Engage branded red*/
+    background-position: 9px 9px;
+    background-size: 20px;
+}
+
+.accountNotificationContent.contentSection {
+    width: calc(100% - 40px - 10px); /*take full width of area - icon width - padding applied*/
+    color: #8F949B;
+    font-size: 0.81rem;
+    line-height: 1.4;
+}
+
+.accountNotificationDismiss {
+    float: right;
+}
+
+.accountNotificationContent.titleLink {
+    display: inline-block;
+}
+
+.accountNotificationTitle {
+    color: #FFF;
+    font-size: 0.94rem;
+    font-weight: 400;
+}
+
+.accountNotificationContent.noNotify {
+    padding-top: 5px;
+}
+
+.accountNoNotify,
+.accountNotificationDismiss {
+    color: #8F949B !important;
+    font-size: 0.81rem;
+    line-height: 1.4;
+}
+
+    .accountNoNotify.text {
+        padding-left: 5px;
+    }
+
+/* Core Styles - Navigation */
+.TopNav {
+    padding: 0px;
+}
+
+.Nav_TopUL, .Nav_SubUL {
+    list-style-type: none;
+}
+
+.Nav_SubUL {
+    display: none;
+}
+
+.Nav_LI {
+    padding: 5px 0px 0px 5px;
+    /*border-bottom: 1px solid #e9e9e9;*/
+    cursor: pointer;
+}
+
+.Nav_SubUL > .Nav_LI:last-of-type {
+    border-bottom: none;
+}
+
+.Nav_LI:hover {
+    display: block;
+}
+
+    .Nav_LI:hover > .Nav_SubUL, .Nav_LI.lihover > .Nav_SubUL {
+        display: block;
+        background-color: #fff;
+    }
+
+    .Nav_LI:hover > a > .Nav_SubMenuIndicator {
+        /* Safari */
+        -webkit-transform: rotate(90deg);
+        /* Firefox */
+        -moz-transform: rotate(90deg);
+        /* IE */
+        -ms-transform: rotate(90deg);
+        /* Opera */
+        -o-transform: rotate(90deg);
+    }
+
+
+
+.Nav_LI > a {
+    padding-bottom: 5px;
+    padding-right: 5px;
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+    .Nav_LI > a.Nav_LI, a.Nav_LI:link, a.Nav_LI:visited, a.Nav_LI:hover, a.Nav_LI:active {
+        color: #FFFFFF;
+        text-decoration: none;
+    }
+
+.Nav_LI > .Nav_SubUL a {
+    font-weight: 400;
+}
+
+.Nav_SubMenuIndicator {
+    display: inline-block;
+    float: right;
+}
+
+.PrimaryNav > .TopNav {
+    padding: 0px;
+}
+
+.PrimaryNav .Nav_TopUL, .primaryNav .Nav_SubUL {
+    list-style-type: none;
+}
+
+.PrimaryNav .Nav_SubUL {
+    margin-top: 0px;
+    display: none;
+}
+
+.PrimaryNav .Nav_LI {
+    font-size: 0.8rem;
+    /* font-family: Tahoma; */
+    white-space: nowrap;
+    border-left: 1px #56575C solid;
+    border-right: 1px #56575C solid;
+    border-top: 1px #56575C solid;
+    border-bottom: 1px #56575C solid;
+    padding: 0px;
+    background-color: #56575C;
+    z-index: 999997;
+    color: #FFFFFF;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -o-box-sizing: border-box;
+    margin-left: 5px;
+    display: inline-block;
+}
+
+    .PrimaryNav .Nav_LI a {
+        font-size: 15px;
+    }
+
+    .PrimaryNav .Nav_LI:hover > .Nav_SubUL, .PrimaryNav .lihover > .Nav_SubUL {
+        display: inline-block;
+        position: absolute;
+        z-index: 9999;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        -moz-box-shadow: 2px 2px 10px #000000;
+        -webkit-box-shadow: 2px 2px 10px #000000;
+        box-shadow: 2px 2px 10px #000000;
+    }
+
+.no-touch .primaryNav .Nav_LI:hover > a > .Nav_SubMenuIndicator {
+    /*visibility: hidden;*/
+}
+
+.PrimaryNav .Nav_LI:hover > a > .Nav_SubMenuIndicator {
+    visibility: hidden;
+}
+
+.PrimaryNav .Nav_LI > a {
+    padding-bottom: 1px;
+    padding-right: 5px;
+    padding-left: 5px;
+    padding-top: 5px;
+    text-decoration: none;
+    font-weight: 400;
+}
+
+    .PrimaryNav .Nav_LI > a:hover {
+        color: #333333;
+        text-decoration: none;
+    }
+
+.PrimaryNav .Nav_LI:hover {
+    background-color: #fff;
+}
+
+.Nav_SubUL .Nav_LI {
+    display: block;
+    margin: 0px;
+}
+
+
+.PrimaryNav .Nav_SubMenuIndicator {
+    display: none;
+    padding-left: 3px;
+    float: none;
+    /* Safari */
+    -webkit-transform: rotate(90deg);
+    /* Firefox */
+    -moz-transform: rotate(90deg);
+    /* IE */
+    -ms-transform: rotate(90deg);
+    /* Opera */
+    -o-transform: rotate(90deg);
+    margin-left: 10px;
+}
+
+
+/* Glyphicon Extensions */
+
+.glyphicons.beaconDelete:before {
+    content: "\e208";
+}
+
+.glyphicons.beaconInfo:before {
+    content: "\E196";
+}
+
+.glyphicons.beaconStar:before {
+    content: "\E050";
+}
+
+.glyphicons.beaconDownload:before {
+    content: "\E220";
+}
+
+.glyphicons.beaconUpload:before {
+    content: "\E219";
+}
+
+.glyphicons.beaconEdit:before {
+    content: "\E151";
+}
+
+.br_icons.br_zip:before {
+    content: "\E326";
+    font-family: 'Glyphicons Regular';
+    color: #FFCC66 !important;
+    font-size: 1.5rem;
+    line-height: 1;
+    vertical-align: top;
+    margin-left: 6px;
+}
+
+.contentIcon.br_icons.br_zip.iconSize_medium{
+    padding-bottom: 14px !important;
+}
+
+.glyphicons.beaconFolder_Open:before {
+    content: "\E145";
+}
+
+.glyphicons.beaconFolder_Closed:before {
+    content: "\E441";
+}
+
+.glyphicons.checked_False:before {
+    content: "\E154";
+}
+
+.glyphicons.checked_True:before {
+    content: "\E153";
+}
+
+.glyphicons.tick:before {
+    content: "\E659";
+}
+
+.glyphicons.megaphone:before {
+    content: "\e356";
+}
+
+.glyphicons.beaconExclamation:before {
+    content: "\E197";
+}
+
+.glyphicons.beaconFlag:before {
+    content: "\E267";
+}
+
+.glyphicons.upArrow:before {
+    content: "\E601";
+}
+
+.glyphicons.downArrow:before {
+    content: "\E602";
+}
+
+.glyphicons.beaconPreview:before {
+    content: "\E052";
+}
+
+.glyphicons.beaconDownloadFile:before {
+    content: "\E182";
+}
+
+.glyphicons.beaconLeftChevron:before {
+    content: "\E225";
+}
+
+.glyphicons.beaconRightChevron:before {
+    content: "\E224";
+}
+
+.glyphicons.beaconLeftArrow:before {
+    content: "\E211";
+}
+
+.glyphicons.beaconRightArrow:before {
+    content: "\E212";
+}
+
+/*Engage custom icons*/
+.calendarIcon {
+    background-image: url('/sorce/beacon/css/images/Event-booking-icon.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.accountConnectionIcon {
+    background-image: url('/sorce/beacon/css/images/Toolbar-connections.svg');
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+@media screen and (max-width: 900px) {
+    .beaconToolbar_searchBox {
+        width: 100px;
+    }
+}
+
+video[id^="bitmovinplayer"]{
+	width:100%;
+}

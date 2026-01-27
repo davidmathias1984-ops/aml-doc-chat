@@ -1,0 +1,13 @@
+/*This is an override stylesheet that can be populated with classes to override the nav classes at page item and page item instance level*/
+
+.redBg {
+	background-color: red;
+}
+
+.blueText {
+	color: blue; 
+}
+
+.TwoColumnMenu {
+	/* See customStyle.css for styling */
+}

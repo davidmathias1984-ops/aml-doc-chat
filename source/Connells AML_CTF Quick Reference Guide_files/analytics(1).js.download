@@ -1,0 +1,125 @@
+/*define googleanalytic functions here so we can see then as undefined (must use var for declaration) */
+var gtag;
+
+var GAnalytics = {
+    /*holds any tracking codes that have been configured*/
+    trackingCodes: [],
+    /* central methods for configuring and calling Google Analytics (current UA and GA4)*/
+    configure: function () {
+        if (!BEACON.Constants.GoodgleAnalyticsTrackingCode) {
+            return;
+        }
+
+        /*Set up ready for google analytics (using gtag) */
+        /*-configuration as per Google's documentation*/
+        window.dataLayer = window.dataLayer || [];
+        gtag = function () { dataLayer.push(arguments); };
+        gtag('js', new Date());
+
+        /*for each tracking code get the first two letters*/
+        this.trackingCodes = BEACON.Constants.GoodgleAnalyticsTrackingCode.split(',');
+
+        /*now lets configure each messurement id as per google documentation*/
+        for (let codeIndex = 0; codeIndex < this.trackingCodes.length; codeIndex++) {
+            let currentTrackingCode = this.trackingCodes[codeIndex];
+            let gtagConfig = {
+                'send_page_view': false,
+                'debug_mode': false/*set this to true to enabled live debugging with GA console*/
+            };
+            /*If using Universal analytics (this 'if' should be removed after July 2023)*/
+            if (currentTrackingCode.toUpperCase().startsWith('UA')) {
+                /*Map the friendly names used in GA4+ with the old fixed dimension<Index> */
+                gtagConfig.custom_map = {
+                    'dimension1': 'PageName',
+                    'dimension2': 'PageID',
+                    'dimension3': 'PageLoadTime',
+                    'dimension4': 'SinglePageViewRecordID',
+                    'dimension5': 'SinglePageViewContentType',
+                    'dimension6': 'ObjectActionType',
+                    'dimension7': 'PageItemInstanceID',
+                    'dimension8': 'UserID',
+                    'dimension9': 'UserIP',
+                    'dimension10': 'UserAgent',
+                    'dimension11': 'ServerName',
+                    'dimension12': 'SessionID'
+                };
+            }
+            gtag('config', this.trackingCodes[codeIndex], gtagConfig);
+        }
+    },
+    sendPageView: function (jsonData) {
+        if (!jsonData || !gtag) {
+            return;
+        }
+        //decode the page title (encoded to prevent XSS issues)
+        jsonData.PageTitle = $("<textarea/>").html(jsonData.PageTitle).text();
+        var gaJSON = {
+            //Necessary params
+            'page_path': jsonData.PageURL,
+            'page_title': jsonData.PageTitle,
+
+            //Custom dimensions/metrics - 20 allowed - 200 for premium accounts
+            'PageName': jsonData.PageName,
+            'PageID': jsonData.PageID,
+            'PageLoadTime': pageLoadTime,
+            'SinglePageViewRecordID': jsonData.SinglePageViewRecordID,
+            'SinglePageViewContentType': jsonData.SinglePageViewContentType,
+            'ObjectActionType': jsonData.ObjectActionType,
+            'PageItemInstanceID': jsonData.PageItemInstanceID,
+            'UserID': jsonData.UserStatInfo.UserID,
+            'UserIP': jsonData.UserStatInfo.UserIP,
+            'UserAgent': jsonData.UserStatInfo.UserAgent,
+            'ServerName': jsonData.UserStatInfo.ServerName,
+            'SessionID': jsonData.UserStatInfo.SessionID
+        };
+        /*This will send to all configured codes*/
+        gtag('event', 'page_view', gaJSON);
+    },
+    sendSearch: function (search_term) {
+        search_term = search_term.replace(/%22/gi, '');
+        search_term = search_term.replace(/\*/gi, '');
+        search_term = search_term.replace(/%20or%20/gi, ' ');
+
+        /*this for loop should be removed after July 2023 and replaced with the contents of 'g-'.sendSearch (with the send_to paramater removed as well)*/
+        for (let codeIndex = 0; codeIndex < this.trackingCodes.length; codeIndex++) {
+            let currentTrackingCode = this.trackingCodes[codeIndex];
+            /*find correct function to fire using the first two letters (as per google reccommendation) */
+            let analyticsSpaceToFire = this[currentTrackingCode.substring(0, 2)];
+            /*Skip if the code is not suppoted*/
+            if (!analyticsSpaceToFire) {
+                return;
+            } else if (!analyticsSpaceToFire.sendSearch) {
+                return;
+            }
+
+            analyticsSpaceToFire.sendSearch(search_term, currentTrackingCode);
+        }
+    },
+    /*Here are the supported code types for Google Analytics (uses the first two letters of the code to define the sub namespace)*/
+    'UA': {
+        /*Google Universal Analytics (legacy) - support ends 1st July 2023 https://support.google.com/analytics/answer/11583528?hl=en*/
+        sendSearch: function (search_term, trackingCode) {
+            /*To accomodate the way we logged to Univeral Analytics*/
+            gtag('event', 'page_view', {
+                'page_path': '/sorce/beacon/?pageid=Sitesearch&searchCriteria=' + search_term,
+                'send_to': trackingCode
+            });
+        }
+    },
+    'G-': {
+        /*Google Analytics 4*/
+        sendSearch: function (search_term, trackingCode) {
+            /*search_term is a default GA4 dimension*/
+            gtag('event', 'search', {
+                'ObjectActionType': 'site_search',
+                'search_term': search_term,
+                'send_to': trackingCode
+            });
+        }
+    }
+}
+
+/*event attactment to detect searches*/
+$(document).on("BEACON:SiteSearch:LogSearchTerms", function (event, search_term) {
+    GAnalytics.sendSearch(search_term);
+});

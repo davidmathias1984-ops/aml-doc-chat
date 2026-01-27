@@ -1,0 +1,202 @@
+
+/* TEMPLATE STYLES */
+
+/* Flexbox styles */
+
+.PageLayout {
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.PageLayoutContent {
+    flex: 1 0 auto;
+    flex-basis: calc(100% - 100px);
+    max-width: 100%;
+}
+
+
+.justifyCentre {
+    justify-content: center;
+}
+
+.flexiParent {
+    display: block;
+}
+
+.flexiChild {
+    flex: 1 1 0%;
+}
+
+.flexStretch {
+	align-items: stretch;
+}
+
+	.flexiParent.wrap {
+		flex-direction: column;
+	}
+
+	.flexiGrow1, .flexiGrow2, .flexiGrow3 {
+		flex-grow: 1;
+	}
+.quicklinksMobileOnly {
+	display: flex;
+}
+
+@media screen and (max-width: 900px) {
+	.sideMenu {
+		display: none;
+	}
+
+	.contentPanel_70 {
+		width: calc(100% - 15px);
+		display: inline-block;
+		vertical-align: top;
+		margin-right: 15px;
+	}
+
+	.contentPanel_30 {
+		width: calc(100% - 15px);
+		display: inline-block;
+		vertical-align: top;
+		margin-right: 15px;
+	}
+}
+
+@media screen and (min-width: 900px) {
+	.quicklinksMobileOnly {
+		display: none;
+	}
+
+	.sideMenu.width100px {
+		max-width: 100px;
+		min-width: 100px;
+	}
+    
+    .sideMenu.width100px:empty {
+        max-width: 0px;
+        min-width: 0px;
+    }
+
+	.sideMenu .pi {
+		position: sticky;
+		top: 0;
+		padding: 5px;
+		margin: 0px;
+		box-shadow: 0px 0px 0px 0px;
+	}
+
+		.sideMenu .pi.quicklinks_my .pageItemHeader > a {
+			margin-top: 20px;
+			margin-right: 10px;
+		}
+
+		.sideMenu .pi h3.itemHeader {
+			word-break: keep-all;
+		}
+
+	.flexiParent {
+		display: flex;
+	}
+
+		.flexiParent.wrap {
+			flex-direction: row;
+			flex-wrap: wrap;
+		}
+
+	.flexiGrow1 {
+		flex-grow: 1;
+	}
+
+	.flexiGrow2 {
+		flex-grow: 2;
+	}
+
+	.flexiGrow3 {
+		flex-grow: 3;
+	}
+
+	/* Quicklinks*/
+	.col_full [PI_Type='My Quicklinks'].flexItem,
+	.col_full [PI_Type='My Quicklinks with title'] {
+		flex-basis: 10%;
+	}
+
+	.col_half [PI_Type='My Quicklinks'].flexItem,
+	.col_half [PI_Type='My Quicklinks with title'] {
+		flex-basis: 19.5%;
+	}
+
+	.col_qtr [PI_Type='My Quicklinks'].flexItem,
+	.col_qtr [PI_Type='My Quicklinks with title'] {
+		flex-basis: 30.5%;
+	}
+
+	.col_3rd article[PI_Type='My Quicklinks'].flexItem,
+	.col_3rd article[PI_Type='My Quicklinks with title'] {
+		flex-basis: 31.5%;
+	}
+
+	.col_23rd [PI_Type='My Quicklinks'].flexItem,
+	.col_23rd [PI_Type='My Quicklinks with title'] {
+		flex-basis: 15%;
+	}
+
+	.col_3qtr [PI_Type='My Quicklinks'].flexItem,
+	.col_3qtr [PI_Type='My Quicklinks with title'] {
+		flex-basis: 15.5%;
+	}
+}
+
+
+
+/* Page item responsive */
+
+/* Mobile */
+/* Quicklinks */
+.quicklinks_my article.carouselContainer {
+	width: 33.333%;
+}
+
+
+
+/* screen min 500px */
+@media screen and (min-width: 500px) {
+	/* Quicklinks */
+	.quicklinks_my article.carouselContainer {
+		width: 25%;
+	}
+}
+
+/* screen min 700px */
+@media screen and (min-width: 700px) {
+}
+/* screen min 900px */
+@media screen and (min-width: 900px) {
+	/* Quicklinks */
+	.quicklinks_my article.carouselContainer {
+		width: 11%;
+	}
+
+	.col_qtr .quicklinks_my article.carouselContainer {
+		width: 50%;
+	}
+
+	.col_half .quicklinks_my article.carouselContainer {
+		width: 25%;
+	}
+
+	.col_qtr [PI_Type='My Quicklinks'].flexItem,
+	.col_qtr [PI_Type='My Quicklinks with title'] {
+		margin-left: 0.5%;
+		min-width: 50px;
+	}
+}
+
+
+@media screen and (min-width: 1300px) {
+	.col_qtr [PI_Type='My Quicklinks'].flexItem,
+	.col_qtr [PI_Type='My Quicklinks with title'] {
+		margin-left: 1.5%;
+		min-width: 80px;
+	}
+}

@@ -1,0 +1,231 @@
+import PhotoSwipeLightbox from './photoswipe/photoswipe-lightbox.esm.js';
+
+const EngageGallery = (function () {
+
+    //array of selectors that can be used to find page items to convert
+    const convertSelectors = ['.engage_gallery'];
+    const rootDir = '/sorce/beacon/pijs/Media/Gallery/photoswipe/';
+
+    //max recommended width of image within Photoswipe
+    const PS_maxWidth = 3000, PS_maxHeight = 3000;
+
+    function sessionID() {
+        //ensures that the main files are loaded with a new session ID each session
+        if (sessionStorage.getItem('photoswipeSessionId')) return sessionStorage.getItem('photoswipeSessionId');
+
+        const sId = Math.floor(Math.random() * 1000000000) + 1;
+        sessionStorage.setItem('photoswipeSessionId', sId);
+        return sId;
+    };
+
+    function addLightboxing(pageItem) {
+        const content = $(pageItem).find('> div[id$=_content]')[0] || pageItem.querySelector('td[id$="_carousel_outer"]');
+
+        //ensure the separator has a space
+        let sep = pageItem.querySelector(".indicator_label").innerText;
+        if (sep[0] != ' ') sep = " " + sep;
+        if (sep.slice(-1) != ' ') sep += ' ';
+
+        const lightbox = new PhotoSwipeLightbox({
+            gallery: content,
+            children: 'article',
+            zoom: false,
+            preloaderDelay: 250,
+            //use labels from the page item
+            closeTitle: pageItem.querySelector(".close_label").innerText,
+            zoomTitle: pageItem.querySelector(".zoom_label").innerText,
+            arrowPrevTitle: pageItem.querySelector(".prev_label").innerText,
+            arrowNextTitle: pageItem.querySelector(".next_label").innerText,
+            errorMsg: pageItem.querySelector(".error_label").innerText,
+            indexIndicatorSep: sep,
+            pswpModule: () => import(rootDir + `/photoswipe.esm.js?v=${sessionID()}`),
+            paddingFn: (viewportSize) => {
+                return {
+                top: 70, bottom: 70, left: 70, right: 70
+                }
+            },
+        });
+
+        //before the lightbox opens, load all content and pass as a data object
+        lightbox.on('beforeOpen', () => {
+            loadAllImages(pageItem, lightbox);
+        });
+
+        //extract and display captions
+        lightbox.on('uiRegister', function () {
+            lightbox.pswp.ui.registerElement({
+                name: 'custom-caption',
+                order: 9,
+                isButton: false,
+                appendTo: 'wrapper',
+                html: '',
+                onInit: (el, pswp) => {
+                    lightbox.pswp.on('change', () => {
+                        const currSlideElement = lightbox.pswp.currSlide.data.element;
+                        if (currSlideElement) el.innerHTML = getCaption(currSlideElement);
+                        else
+                            if (lightbox.pswp.currSlide.data) el.innerHTML = lightbox.pswp.currSlide.data.title;
+                    });
+                }
+            });
+        });
+
+        lightbox.init();
+    }
+
+    function getCaption(parentElement) {
+        //look for caption and link to SPV
+        const imgInfo = parentElement.querySelector(".gallery_image_caption");
+
+        const caption = imgInfo.querySelector('.image_long_desc'),
+            spvLink = imgInfo.querySelector('.image_spv_link');
+        const captionHTML = caption.innerHTML || parentElement.querySelector('img').getAttribute('alt');
+        const s = `<span class="psCaption" id="${imgInfo.id}">${captionHTML}</span>${spvLink.outerHTML}`;
+        return s;
+    }
+
+    function loadAllImages(pageItem, lightbox) {
+        //load all additional images for the page item 
+        const bpi = BEACON.page.pageItemInstanceById(pageItem.id);
+        var realIndex = 0;
+
+        bpi.loadAllData = function () {
+            //backup existing load pattern and then load everything
+            this.origIncrementRows = this.incrementRows;
+            this.incrementRows = 99999;
+            
+            const thisActiondata = new BEACON.actiondata(this.uniqueInstanceId, this.pageItemInstanceId, 0, this.incrementRows, this.moreRecords, this.activeFilters, this.PageItemType, this.isCustomPageItem, this.noResultsFoundMessage, this.noResultsFoundMode, this.pageItemObjectID, this.isCustomPageItemObject);
+            const url = "actions.aspx";
+
+            BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+                function (returnText) {
+                    //reset loading increment
+                    bpi.incrementRows = bpi.origIncrementRows;
+                    //the entire lightbox should only use results from the XHR post as this fetches all results
+                    lightbox.pswp.options.dataSource.items = [];
+                    //add all returned data to the image gallery
+                    const parser = new DOMParser();
+                    const articles = parser.parseFromString(returnText.Content,"text/html").querySelectorAll('article');
+                    const currSlideElement = lightbox.pswp.currSlide.data.element;
+                    const imgInfo = currSlideElement.querySelector(".gallery_image_caption");
+                    const currImageId = imgInfo.id;
+                    
+                    
+                    for (let i = 0, j = articles.length; i < j; i++) {
+
+                        const a = articles[i].querySelector("a[data-pswp-width]"),
+                            w = a.dataset.pswpWidth,
+                            h = a.dataset.pswpHeight,
+                            caption = articles[i].querySelector('.gallery_image_caption').innerHTML,
+                            imageId = articles[i].querySelector('.gallery_image_caption').id,
+                            sp = new URLSearchParams(new URL(a.href, document.location.origin).search);
+
+
+                        //ignore if height / width is not known
+                        if (w <= 0 || h <= 0) continue;
+
+                        const s = sp.get("imagepath");
+                        const imgToLoad = {
+                            src: s,
+                            originalSrc: s,
+                            width: w,
+                            originalWidth: w,
+                            height: h,
+                            originalHeight: h,
+                            title: caption,
+                            id: imageId
+                        };
+                        lightbox.pswp.options.dataSource.items.push(imgToLoad);
+
+                        if (imageId == currImageId) {
+                            realIndex = i;
+                        }
+                    }
+
+                    scaleImages(lightbox.pswp.options.dataSource.items, lightbox, pswp, realIndex);
+
+                    addThumbnailGallery(pageItem, lightbox.pswp.options.dataSource.items);
+                    window.addEventListener("resize", waitForEnd(function (e) {
+                        scaleImages(lightbox.pswp.options.dataSource.items, lightbox, pswp, realIndex);
+                    }));
+                }
+            );
+        };
+        bpi.loadAllData();
+    }
+
+    function waitForEnd(callbackFunction) {
+        var timer;
+        return function (event) {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(callbackFunction, 100, event);
+        };
+    }
+
+    function scaleImages(psItems, lightbox, pswp, realIndex) {
+        //only use sampleImg if the image needs scaling DOWN, otherwise show raw image
+
+        //max dimensions are either the browser viewport, or the max dimensions that photoswipe recommends
+        const maxW = Math.min(document.documentElement.clientWidth, PS_maxWidth),
+            maxH = Math.min(document.documentElement.clientHeight, PS_maxHeight);
+
+        for (let i = 0, j = psItems.length; i < j; i++) {
+            const img = psItems[i];
+            if (img.originalWidth < maxW && img.originalHeight < maxH)
+                img.src = img.originalSrc;
+            else {
+                //only use sampleImg if the image needs scaling down
+                const scaleFactor = Math.max(img.originalWidth / maxW, img.originalHeight / maxH);
+                img.width = Math.round(img.originalWidth / scaleFactor);
+                img.height = Math.round(img.originalHeight / scaleFactor);
+                img.src = `/sorce/tools/sampleimg.aspx?mode=fit&height=${img.height}&width=${img.width}&imagepath=${encodeURIComponent(img.originalSrc)}`;
+            }
+        }
+
+        lightbox.pswp.currIndex = realIndex;
+        lightbox.pswp.potentialIndex = realIndex;
+        lightbox.pswp.refreshSlideContent(realIndex);
+    }
+
+
+    function addThumbnailGallery(pageItem, psItems) {
+        return;
+        const sampleImg = '/sorce/tools/sampleImg.aspx?mode=fit&height=100&width=100&imagepath=';
+        let thumbNailGallery = pageItem.querySelector('.psThumbnailGallery');
+
+        let thumbHTML = '';
+        for (let i = 0, j = psItems.length; i < j; i++) {
+            thumbHTML += `<img class="psGalleryThumbnail" src="${sampleImg}${psItems[i].src}">`;
+        }
+
+        thumbNailGallery.innerHTML = thumbHTML;
+        thumbNailGallery.style.display = '';
+    }
+
+
+    function addCSS() {
+        let fileref = document.createElement("link");
+        fileref.rel = "stylesheet";
+        fileref.type = "text/css";
+        fileref.href = `${rootDir}/photoswipe.css`;
+        document.getElementsByTagName("head")[0].appendChild(fileref);
+    }
+
+    function doInit() {
+        addCSS();
+
+        for (let i = 0; i < convertSelectors.length; i++) {
+            const targets = document.querySelectorAll(convertSelectors[i]);
+            for (let j = 0; j < targets.length; j++)
+                addLightboxing(targets[j]);
+        }
+    }
+
+    return {
+        init: doInit,
+        sessionID: sessionID
+    };
+})();
+
+
+EngageGallery.init();

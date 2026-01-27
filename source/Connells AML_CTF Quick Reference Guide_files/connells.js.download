@@ -1,0 +1,31 @@
+var CONNELLS = CONNELLS || {};
+
+
+
+$(document).on('BEACON:PAGE:ready', function() {
+
+	// MJB 19062018 - this file was disabled in site js files. Need to reduce notificaiton polling, so reinstated, with block below commented out
+
+	// if ($('#PI1738').length === 0) { //if we’re not on a page already displaying this PI... then 
+	//       var ad = new BEACON.actiondata(
+	//             'PI1738', //uniqueID of the PII to fetch
+	//             '1738', //PII ID in the database
+	//             1, //start row
+	//             1, //rows to fetch
+	//             false, //more rows available? Not relevant for this really
+	//             [] // page variables. As we're fetching a PII that's on another page....
+	//       );
+	//       var url = 'actions.aspx';
+	//       BEACON.xhrPost(url, {
+	//             actiondata: JSON.stringify(ad) //post this to the actions.aspx file, which does the heavy lifting
+	//       }, function(responseText) { //responseText is the returned JSON object
+	//             $('.banner_img').html(responseText.Content); //Content is the collection of pages. As we're only fetching a single page...
+	//       });
+	// }
+
+	//MJB 19062018 - only poll for notifications every 30s
+	BEACON.notifications.CORE.NotificationsLooperInterval = 30 * 1000;
+
+	$('input.page-load-no-search').attr('value', '0');
+
+});

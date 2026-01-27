@@ -1,0 +1,283 @@
+var mobile = mobile || {};
+var menu = menu || {};
+var scrollTimeout = null;
+
+$(document).on('BEACON:PAGE:ready', function () {
+    mobile.menu.init();
+});
+
+menu = {
+    AddMenuLeftRightOverflowGradient: function (menuobj) {
+        var first = $("<div class='FirstMenuGradient'></div>");
+        var second = $("<div class='SecondMenuGradient'></div>");
+        $(menuobj).append([first, second]);
+    },
+    RegisterSecondaryMenuTopMenuEvents: function (menuobj) {
+        $(document).ready(function () {
+            //Make sure that the drop arrow positions are correct as per screen size
+            menu.RecallibrateSecondaryTopNavDropdown(menuobj.find(".Nav_SubUL"));
+            menu.PositionGradient(menuobj);
+
+            //Make sure the secondary menu positions are recalculated when someone scrolls the top menu
+            menuobj.find("ul.Nav_TopUL").on('scroll', function () {
+                menu.PositionGradient(this);
+                menu.RecallibrateSecondaryTopNavDropdown(menuobj.find(".Nav_SubUL"));
+                menuobj.addClass("scrolling");
+                if (scrollTimeout) clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(function () { menuobj.removeClass("scrolling"); }, 500);
+
+            });
+            //Ensure that menu positions are recaculated when the screen size has changed or someone hovers over the menu
+            $(window).resize(function () {
+                menu.PositionGradient(menuobj);
+                menu.RecallibrateSecondaryTopNavDropdown(menuobj.find(".Nav_SubUL"));
+            });
+            $(menuobj).find("ul.Nav_TopUL > li.Nav_LI").hover(function () { menu.RecallibrateSecondaryTopNavDropdown(menuobj.find(".Nav_SubUL")); });
+        });
+    },
+    RegisterPrimaryMenuMenuEvents: function (menuobj) {
+        $(document).ready(function () {
+            //Make sure that the drop arrow positions are correct as per screen size
+            menu.RecallibratePrimaryNavDropdown(menuobj);
+            menu.HideBurgerWithNoLinks();
+
+            //Ensure that menu positions are recaculated when the screen size has changed or someone hovers over the menu
+            $(window).resize(function () { menu.RecallibratePrimaryNavDropdown(menuobj); });
+            $(menuobj).find("ul.Nav_TopUL > li.Nav_LI").hover(function () {
+                menu.RecallibratePrimaryNavDropdown(menuobj);
+            });
+        });
+    },
+    HideBurgerWithNoLinks: function () {
+        var menu = $(".menu-hamburger");
+        var menuitems = $("#popoutmenucontainer > nav > ul > li").length;
+        if (menuitems == 0) {
+            $(menu).css("display", "none");
+        }
+    },
+    PositionGradient: function (menuObj) {
+        try {
+            var leftObj = $(menuObj).find(".FirstMenuGradient:first");
+            var rightObj = $(menuObj).find(".SecondMenuGradient:first");
+            var currentScrollPos = $(menuObj).scrollLeft();
+            var maxScrollWidth = menuObj.scrollWidth - menuObj.clientWidth;
+            if (isNaN(maxScrollWidth)) { maxScrollWidth = 1; }
+
+            leftObj.css("display", "none");
+            rightObj.css("display", "none");
+
+            // Left gradient
+            if (currentScrollPos >= 5) {
+                leftObj.css({ "display": "block", "height": $(leftObj).parent().height() + "px" });
+            }
+            // Right gradient
+            if (currentScrollPos < maxScrollWidth) {
+                rightObj.css({ "display": "block", "height": $(rightObj).parent().height() + "px" });
+            }
+        } catch (e) { }
+
+    },
+    RecallibratePrimaryNavDropdown: function (menuObj) {
+        //Width of the screen
+        var WinWidth = $(window).width();
+
+        $(menuObj).find(".Nav_SubUL").each(function () {
+            //Main dropdown
+            var mainUL = $(this).parent();
+            var ArrowDiv = $(this).find(".PopOutUpArrow");
+
+            //We cannot get the left position of the dropdown when it is hidden so we us the left position of the main dropdown with a 15px offset as the left position for the dropdown
+            var DropdownLeftPos = mainUL.position().left + 15;
+            var DropdownWidth = $(this).width();
+
+            // If the current left positon '+' the width of the UL is greater than the screen width
+            // the position of the dropdown needs to be adjusted
+            if (DropdownLeftPos + DropdownWidth >= WinWidth) {
+
+                var OverPx = (DropdownLeftPos + DropdownWidth) - WinWidth;
+                var LeftPos = DropdownLeftPos - OverPx - 30;
+                $(this).css("right", 10 + "px");
+
+                //Now position the arrow 
+                var ArrowMargin = DropdownLeftPos - LeftPos;
+                var MaxArrowLeftPosition = $(this).width() - 20;
+                if (ArrowMargin >= MaxArrowLeftPosition) {
+                    ArrowMargin = MaxArrowLeftPosition;
+                }
+                ArrowDiv.css("margin-left", ArrowMargin + "px")
+            }
+        });
+    },
+    RecallibrateSecondaryTopNavDropdown: function (subULObj) {
+        var ClientWidth = $(window).width();
+
+        $(subULObj).each(function () {
+            if (!$(this).parent().parent().is(":hover")) {
+                //We really only want to go through this computational headache if the element is in view
+                return;
+            }
+
+            // Collect some variables
+            var ParentLIWidth = $(this).parent().parent().outerWidth() / 2 - 10;
+            var SubULWidth = $(this).outerWidth();
+            var ScrollOffset = $(this).parent().parent().offset().left;
+
+            //If the scroll offset is less than 10 reset back to 10 to prevent the menu going off screen
+            if (ScrollOffset < 10) {
+                ScrollOffset = 10;
+            }
+
+            //Now make sure that the same cannot happen on the right side of the screen
+            if ((ScrollOffset + SubULWidth) >= ClientWidth) {
+                ScrollOffset = ClientWidth - SubULWidth - 10;
+                //Make sure that the popout arrow position keeps with the parent LI
+                var LILeft = $(this).parent().parent().offset().left;
+                ParentLIWidth = LILeft - ScrollOffset + 10;
+            }
+
+            //Adjust the position of the dropdown arrow so it is central to the parent LI
+            $(this).find(".PopOutUpArrow").css({ "margin-left": ParentLIWidth });
+
+            //Adjust the left position of the dropdown menu so that it moves with the content as the user scrolls
+            $(this).css({ "left": ScrollOffset + "px" });
+        });
+        menu.RecallibrateLeftSecondaryNav();
+    },
+    RecallibrateLeftSecondaryNav: function () {
+        $(document).ready(function () {
+            $('.sideMenu .SecondaryNav .Nav_TopUL > .Nav_LI').each(function () {
+                var adjust = $(this).offset().top;
+                $(this).find(".Nav_SubUL").css("top", adjust + "px")
+            });
+        })
+    },
+    InsertPopoutArrow: function (MenuObj) {
+        $(MenuObj).each(function () {
+            $(this).prepend("<div class='PopOutUpArrow'></div>");
+        });
+    },
+    StyleNav: function () {
+         $("div.mobileOnly .SecondaryNav").addClass("topMenu SecondaryNavColour");
+         menu.AddMenuLeftRightOverflowGradient($("div.mobileOnly .SecondaryNav .Nav_TopUL:first"));
+         menu.InsertPopoutArrow($(".SecondaryNav.topMenu .Nav_SubUL"));
+         menu.InsertPopoutArrow($(".DesktopPrimaryNav > .PrimaryNav .Nav_SubUL"));
+         menu.RegisterPrimaryMenuMenuEvents($(".DesktopPrimaryNav > .PrimaryNav"));
+         menu.RegisterSecondaryMenuTopMenuEvents($(".SecondaryNav.topMenu"));
+    }
+}
+
+mobile.menu = {
+    init: function () {
+        this.text = [];
+        $('.MobilePrimaryNav > .PrimaryNav > .Nav_TopUL').hide(); //Make sure the main mobile UL is out of view
+        // Setup mobile burger menu
+        this.AddBurgerMenu();
+        this.ApplyMobilePrimaryMenuDropdownItems();
+        this.ApplyInPageMenuDropdownItems();
+        this.ApplyInPageMenuEvents();
+        this.ApplyMobilePrimaryMenuEvents();
+        // Grab the labels for the different texts
+        this.grabLabelText("SHOW_MENU_SCASE");
+        this.grabLabelText("HIDE_MENU_SCASE");
+        menu.StyleNav();
+    },
+    text: {},
+    grabLabelText: function (LabelHandle) {
+        var locale = this; // Allow passing this level into the function
+        BEACON.xhrGet(
+            "/sorce/beacon/pageitem/appaspx/generic/getLabelByHandle.aspx?labelHandle=" + LabelHandle,
+            function (returnText) {
+                locale.setLabelText(LabelHandle, returnText);
+            });
+    },
+    setLabelText: function (LabelHandle, returnText) {
+        mobile.menu.text.push({ LabelHandle: LabelHandle, Text: returnText }); //Cache response in array
+        //Add title text to all items that have a data mllabel attribute
+        $(document).find("[data-mllabel='" + LabelHandle + "']").each(function () {
+            $(this).attr('title', returnText);
+        });
+    },
+    ApplyInPageMenuDropdownItems: function () {
+        $(".InPageNav .Nav_ItemWrapper").each(function () {
+            var PlusMinusObject = $(this).find(".Nav_SubMenuIndicator");
+            PlusMinusObject.addClass("glyphicons plus");
+            PlusMinusObject.text("");
+
+            $(this).click(function () { PlusMinusObject.toggleClass('plus minus'); })
+        });
+    },
+    ApplyInPageMenuEvents: function () {
+        //Adds the event triggers to all the poput nav items that have dropdowns
+        $(".InPageNav .Nav_ItemWrapper").click(function () {
+            $(this).find("ul.Nav_SubUL").toggle();
+            $(this).parent().toggleClass("PopOutSelectedFill")
+        });
+    },
+    ApplyMobilePrimaryMenuDropdownItems: function () {
+        //Adds the plus/minus icons to the poput menu items that have dropdowns
+        $("#popoutmenucontainer ul.Nav_SubUL").each(function () {
+            var link = $(this).parent().find("a.Nav_A:first");
+            link.append($('<span/>', { class: 'glyphicons plus floatRight' }));
+            //Add onclick to change the plus to a minus
+            link.click(function () { $(this).find('span:last').toggleClass('plus minus'); });
+        });
+    },
+    ApplyMobilePrimaryMenuEvents: function () {
+        //Adds the event triggers to all the poput nav items that have dropdowns
+        $("#popoutmenucontainer .Nav_LI").click(function () {
+            $(this).find("ul.Nav_SubUL").toggle();
+            $(this).toggleClass("PopOutSelectedFill")
+        });
+
+        $(window).resize(function () { mobile.menu.SetMenuHeight(); });
+    },
+    AddBurgerMenu: function () {
+        //Adds the burger menu to the dom
+        var MobileMenuHead = $('.PrimaryNav:first');
+        if (MobileMenuHead.children().length > 0) {
+
+            //This is the main hamburger icon
+            var MenuLinkInitial = $('<a/>', {
+                'id': 'HamburgerInitial',
+                'class': 'noUnderline fontColourWhite',
+                'href': 'JavaScript:void(null)',
+                'data-mllabel': 'SHOW_MENU_SCASE'
+            }).append($('<span/>', {
+                'class': 'glyphicons menu-hamburger actionIcon'
+            })).click(function () {
+                var HamburgerMain = $("div.menu-hamburger");
+                HamburgerMain.toggleClass('selected');
+                $(HamburgerMain).find("a").toggleClass("displayNone");
+                $("#popoutmenucontainer").animate({ width: 'toggle' });
+            });
+
+            //This is the close icon that will show when the menu has been clicked
+            var MenuLinkClicked = $('<a/>', {
+                'id': 'HamburgerClicked',
+                'class': 'noUnderline fontColourWhite displayNone',
+                'href': 'JavaScript:void(null)',
+                'data-mllabel': 'HIDE_MENU_SCASE'
+            }).append($('<span/>', {
+                'class': 'glyphicons beaconDelete actionIcon'
+            })).click(function () {
+                var HamburgerMain = $("div.menu-hamburger");
+                HamburgerMain.toggleClass('selected');
+                $(HamburgerMain).find("a").toggleClass("displayNone");
+                $("#popoutmenucontainer").animate({ width: 'toggle' });
+            });
+
+            //Append the objects to the DOM
+            var MainHamburgerDiv = $('<div/>', { 'class': 'menu-hamburger' })
+                .append(MenuLinkInitial, MenuLinkClicked);
+
+            $(".MobilePrimaryNav").prepend(MainHamburgerDiv);
+            mobile.menu.SetMenuHeight();
+        }
+    },
+    SetMenuHeight: function () {
+        var ContainerParentHeight = $("#popoutmenucontainer").parent()[0].scrollHeight;
+
+        $("#popoutmenucontainer").height(ContainerParentHeight);
+
+    }
+};

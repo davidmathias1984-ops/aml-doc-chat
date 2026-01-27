@@ -1,0 +1,130 @@
+var Domains = null;
+
+var linkHandler = {
+	
+	//Options object to be used whenever linkify is called
+	 linkifyOptions : {
+		ignoreTags: ['textarea', 'style', 'script'],
+		formatHref: function (href, type) {
+			if (type === 'mention') {
+				if (href.includes('-')) {
+					href = '/sorce/beacon/pageitem/msgraph/MSGraphTeamsChannelRedirect.ashx?profileName=' + href.substr(1);
+				}
+				else {
+					href = '/sorce/beacon/profile' + href;
+                }
+			}
+			//Check for sorce link
+			if (type === 'url' && href.includes("/sorce/")) {
+				var hrefSplit = href.split('/sorce/');
+				//Check if sorce link is a domain that is associated with intranet
+				if (Domains.some(e => hrefSplit[0].includes(e))) {
+					//treat href as an internal link
+					href = '/sorce/' + hrefSplit[1];
+				} else if (href.includes('http://internalsorcelink')) {
+					// Strip dummy domain from internal link 
+					href = href.replace('http://internalsorcelink', '')
+				}
+			}
+			return href;
+		},
+		formatTitle: function (href, type) {
+			if (type === 'mention') {
+				return BEACON.Constants.linkToProfileLabel + ': ' + href.slice(1);;
+			}
+			if (type === 'url' && href.includes("/sorce/")) {
+				//Strip dummy domain from title
+				href = href.replace('http://internalsorcelink', '')
+			}
+			return BEACON.Constants.linkToURLLabel + ': ' + href;
+		},
+		target: function (href, type) {
+			if (type === 'mention') {
+				if (href.includes('-')) {
+					return '_blank';
+				}
+				else {
+					return '';
+                }
+			}
+			if (type === 'url' && href.includes("/sorce/")) {
+				href = href.replace('http://internalsorcelink', '')
+				var hrefSplit = href.split('/sorce/');
+				//Check if sorce link is a domain that is associated with intranet
+				if (Domains.some(e => hrefSplit[0].includes(e)) || href.substring(1, 6) == 'sorce') {
+					//treat href as an internal link
+					return ''
+				}
+			}
+			return '_blank'
+		},
+	},
+
+	linkPI: function ($pi) {
+		//only process if the object is not excluded. This class could be toggled at any point, so check each time!
+		if (!$pi.hasClass('do-not-linkify')) {
+
+			//Places dummy domain in order to linkify a /sorce link
+			linkHandler.parseInternalLinks($pi, '/sorce/', 'http://internalsorcelink/sorce/');
+
+			//Calls the linkify code with the options specified above
+			$pi.linkify(linkHandler.linkifyOptions);
+
+			//Removes the dummy domains
+			linkHandler.parseInternalLinks($pi, 'http://internalsorcelink', '');
+		}
+	},
+
+
+	linkfyPageItems: function () {
+		//find all content PII (this will include all headers, footers and nested PIs within them)
+		for (var pin = 0, pil = BEACON.page.pageItemInstances.length; pin < pil; pin++) {
+			var bpi = BEACON.page.pageItemInstances[pin];
+			var eid = bpi.uniqueInstanceId;
+
+			if (bpi.PageItemType == 'CONTENT') {
+				//process the PI container
+				var $pi = $('#' + eid);
+
+				linkHandler.linkPI($pi);
+				
+				//reprocess any updates to content
+				$pi.on('BEACON:PII:allUpdate', function () {
+					linkHandler.linkPI($(this));
+				});
+			}
+		}
+	},
+
+	parseInternalLinks: function ($pi, term, replacement) {
+
+		$($pi[0]).find('*:contains("' + term + '"):not(textarea)')
+			.not(':has(:contains("' + term + '"))')
+			.contents().each(function () {
+				//nodeType for text nodes is 3
+				if (this.nodeType === 3 && this.textContent.includes(term)) {
+					var html = this.textContent.replaceAll(term, replacement)
+					// replace text node with html
+					$(this).replaceWith(html)
+				}
+
+			})
+	},
+
+	getDomains: function () {
+		$.ajax({
+			url: "/sorce/Beacon/PageItem/AppAspx/generic/GetDomains.ashx",
+			type: "POST",
+			contentType: 'application/json; charset=utf-8',
+			success: function (response) {
+				Domains = response;
+				linkHandler.linkfyPageItems();
+			},
+		});
+	}
+}
+
+$(document).on('BEACON:PAGE:ready', function () {
+	//Get domains now only called on page ready as we set linkify up using allUpdate on specific page items 
+	linkHandler.getDomains();
+});

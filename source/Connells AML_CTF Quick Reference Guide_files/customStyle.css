@@ -1,0 +1,209 @@
+.banner_img {
+    width: 175px;
+    background-image: url(/sorce/beacon/images/2022logo.jpg);
+    margin-top: 2px;
+    margin-bottom: 2px;
+    height: 51px;
+}
+
+/*Nav Styling*/
+
+.DesktopPrimaryNav>.PrimaryNav .Nav_LI a>.Nav_Span,
+.sideMenu>.SecondaryNav .Nav_Span {
+    /*Darken up the main nav*/
+    opacity: 1;
+    font-weight: 600;
+}
+
+.DesktopPrimaryNav>.PrimaryNav .Nav_LI a,
+.menu-hamburger a>span::before {
+    /*nav text colour*/
+    color: #8C929F;
+    /* [n01] */
+}
+
+.DesktopPrimaryNav>.PrimaryNav>ul>.Nav_LI:hover,
+.DesktopPrimaryNav>.PrimaryNav>ul>.Nav_LI:hover>div.Nav_ItemWrapper>a {
+    /* Primary menu hover */
+    background-color: #1082A1;
+    /* [n04] */
+    color: #FFF;
+    /* [n05] */
+}
+
+.DesktopPrimaryNav>.PrimaryNav .Nav_SubUL>.Nav_LI:hover,
+.DesktopPrimaryNav>.PrimaryNav .Nav_SubUL>.Nav_LI:hover a {
+    /* Primary menu dropdown hover */
+    color: #1082A1;
+    /* [nd06] */
+}
+
+.DesktopPrimaryNav>.PrimaryNav>ul>.Nav_LI:hover {
+    /*Top border colour for top nav hover*/
+    border-top-color: #00586E;
+    /* [n06] */
+}
+
+
+
+.DesktopPrimaryNav>.PrimaryNav .Nav_SubUL>.Nav_LI {
+    /*Clear the lines between each row in dropdown nav*/
+    box-shadow: none !important;
+}
+
+/* Secondary nav */
+
+.sideMenu>.SecondaryNav .Nav_TopUL>.Nav_LI:hover,
+.sideMenu>.SecondaryNav .Nav_TopUL>.Nav_LI:hover>div>.Nav_A .Nav_Span,
+.SecondaryNav.topMenu .Nav_LI:hover {
+    /* Secondary nav hover */
+    background-color: #1082A1;
+    /* [sn04] */
+}
+
+.sideMenu>.SecondaryNav .Nav_SubUL>.Nav_LI,
+.sideMenu>.SecondaryNav .Nav_SubUL>.Nav_LI a {
+    /* Secondary nav dropdown */
+    background-color: #1082A1;
+    /* [snd01] */
+
+}
+
+.sideMenu>.SecondaryNav .Nav_SubUL>.Nav_LI:hover,
+.sideMenu>.SecondaryNav .Nav_SubUL>.Nav_LI:hover>div>.Nav_A .Nav_Span,
+.SecondaryNav.topMenu .Nav_SubUL>.Nav_LI:hover {
+    /* Secondary nav dropdown hover */
+    background-color: #1082A1;
+    /* [snd05] */
+    color: #000;
+    /* [snd06] */
+}
+
+.sideMenu>.SecondaryNav .Nav_SubUL::before {
+    /* Secondary nav dropdown arrow */
+    border-right-color: #1082A1;
+}
+
+.sideMenu>.SecondaryNav .Nav_SubUL .Nav_Img {
+    margin-left: 5px;
+}
+
+/* Links */
+.PageContainer a,
+.notificationContent a h4,
+.pageItemHeader a {
+    color: #1082A1;
+    /* [l01] */
+}
+
+/* Buttons */
+
+.actionButtonContainer,
+.InputBoxButton,
+.FAQFlexExpand,
+.TaskButton,
+a.transitionRightOuter,
+a.transitionLeftOuter,
+div.transitionFooter a.pauseButton {
+    background-color: #C80D68;
+    /* [b01] */
+}
+
+.glyphicons.transLeft:before {
+    color: #C80D68;
+    /* [b01] */
+}
+
+.glyphicons.transRight:before {
+    color: #C80D68;
+    /* [b01] */
+}
+
+/* Sort logo potion in Sorce Launch */
+.sorcelaunch_html .banner .PageContainer {
+    width: 90%;
+}
+
+.sorcelaunch_html .banner .PageContainer .banner_img {
+    margin-left: 0;
+}
+
+/* Connells custom */
+.noSearch .liveFiltersContainer {
+    display: none;
+}
+
+[PI_Type="Feedback"] div.feedbackNominee .content {
+    background: url(/sorce/beacon/images/backgrounds/Connells_Stars.jpg) repeat;
+    background-size: contain;
+    background-position-x: -80px;
+}
+
+/*Support ticket #467*/
+
+div.pi.singlePage article[PI_Type="News"] div.contentMain > img.contentImage {
+    display: none;
+}
+
+/*Support ticket 2815*/
+
+article[pi_type="Contact Profile"] div.contentPanel_30.rightPad_none .sidePanel.relatedContent.bottomMargin_medium:nth-child(2) {
+    display: none;
+}
+
+
+/*show not supported message for IE*/
+@media all and (-ms-high-contrast: none),
+(-ms-high-contrast: active) {
+
+    main,
+    nav,
+    header *,
+    .beaconToolbar * {
+        display: none !important;
+    }
+
+    header::after {
+        display: block;
+        content: "Internet explorer is no longer supported. Please use a different browser";
+        padding: 100px;
+        background-color: yellow;
+        color: red;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+}
+
+div#container_datepicker {
+    font-family: Inter, Arial;
+}
+
+div.pi article[pi_type="MyArticles"] .imageContainer,
+div.pi article[pi_type="MyPages"] .imageContainer {
+    width: 10%;
+}
+
+div .InputBox {
+    line-height: 1.3;
+}
+
+/* Two column menu */
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_LI.TwoColumnMenu > div > .Nav_SubUL {
+    max-width: 600px;
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_LI.TwoColumnMenu > div > .Nav_SubUL {
+    margin-left: -75px;
+    margin-right: 40px;
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_LI.TwoColumnMenu > div > .Nav_SubUL li {
+    width: 50%;
+    max-width: 250px;
+    float: left;
+}
+
+.Nav_LI.TwoColumnMenu .PopOutUpArrow {
+    margin-left: 100px;
+}

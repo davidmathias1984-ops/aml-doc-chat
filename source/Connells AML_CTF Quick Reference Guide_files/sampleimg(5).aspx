@@ -1,0 +1,1 @@
+<meta http-equiv='refresh' content='0;url=https://engage.connellsgroup.co.uk/sorce/tools/sampleimg.aspx?mode=crop&imagepath=&width=15&height=8&otk=J6Woj0vC2J1EEu7M44B0uk3z3yLmoaYJ'>

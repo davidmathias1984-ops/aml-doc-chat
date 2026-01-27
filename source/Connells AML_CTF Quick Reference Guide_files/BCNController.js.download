@@ -1,0 +1,3424 @@
+// Main ENGAGE JS Library
+var user_agent = navigator.userAgent;
+var isMobile = (user_agent.indexOf("EngageMobileApp") > -1 || user_agent.indexOf("Mobile") > 0 || user_agent.indexOf("Android") > 0);
+var isMobileApp = (user_agent.indexOf("EngageMobileApp") > -1);
+var isIE = (navigator.userAgent.indexOf("MSIE ") > 0 || navigator.userAgent.indexOf("Trident") > 0 || navigator.userAgent.indexOf("Edge") > 0);
+var LabelCache = []
+RegExp.quote = function (str) {
+    return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
+};
+
+//Cache objects for the more and less labels - so that it will only request the text once
+var moreButtonCache = {
+    moreButtonDivArray: [],
+    updateMore: function (returnText, moreButtonDiv) {
+        moreButtonCache.moreState = 2;
+        moreButtonCache.moreButtonDivArray.forEach(function (moreButtonDiv) {
+            try {
+                if (returnText != "") {
+                    moreButtonDiv.innerHTML = "<span style='display: inline-block;' class='leftMargin_medium '>" + returnText + "</span><span class=' noUnderline glyphicons upArrow'></span>";
+                    moreButtonDiv.setAttribute("title", returnText);
+                } else {
+                    moreButtonDiv.innerHTML = "<span class='transitionMore'>More</span><span class='noUnderline glyphicons noUnderline upArrow'></span>";
+                    moreButtonDiv.setAttribute("title", "More");
+                }
+                moreButtonCache.moreLabelText = returnText;
+            }
+            catch (err) { }
+        })
+    },
+    moreState: 0,
+    moreLabelText: ""
+};
+
+var lessButtonCache = {
+    lessButtonDivArray: [],
+    updateLess: function (returnText, lessButtonDiv) {
+        lessButtonCache.lessState = 2;
+        lessButtonCache.lessButtonDivArray.forEach(function (lessButtonDiv) {
+            try {
+                if (returnText != "") {
+                    lessButtonDiv.innerHTML = "<span style='display: inline-block;'>" + returnText + "</span>";
+                    lessButtonDiv.setAttribute("title", returnText);
+                } else {
+                    lessButtonDiv.innerHTML = "<span class='transitionLess'>Less</span>";
+                    lessButtonDiv.setAttribute("title", "Less");
+                }
+                lessButtonCache.lessLabelText = returnText;
+
+            }
+            catch (err) { }
+        })
+    },
+    lessState: 0,
+    lessLabelText: ""
+};
+
+function BEACON_INIT() {
+    // empty function to prevent object error when using sorceLaunch
+}
+
+var BEACON = {
+    Labels: {
+        GetLabel: function (labelhandle) {
+            var LabelIndex = this.GetLabelCacheIndex(labelhandle);
+            if (LabelIndex > -1) {
+                return LabelCache[LabelIndex].Label;
+            }
+            return labelhandle;
+        },
+        AddLabelToCache: function (LabelObj) {
+            if (!this.IsLabelInCache(LabelObj)) {
+                LabelCache.push(LabelObj);
+            }
+        },
+        AddLabelsToCache: function (LabelsInArray) {
+            if ($.isArray(LabelsInArray)) {
+                for (var i = 0; i < LabelsInArray.length; i++) {
+                    this.AddLabelToCache(LabelsInArray[i]);
+                }
+            }
+        },
+        IsLabelInCache: function (LabelObj) {
+            for (var i = 0; i < LabelCache.length; i++) {
+                if (LabelCache[i].Handle == LabelObj.Handle) {
+                    return true;
+                }                
+            }
+            return false;
+        },
+        GetLabelCacheIndex: function (LabelHandle) {
+            for (var i = 0; i < LabelCache.length; i++) {
+                if (LabelCache[i].Handle.toUpperCase() == LabelHandle.toUpperCase()) {
+                    return i;
+                }
+            }
+            return -1;
+        },
+        TranslateGrid: function (gridToTranslate) {
+            var gridHandle = 'grid_' + gridToTranslate;
+            //update only the grid cells
+            var selector = 'td';
+            this.TranslateObj(findTop()[gridHandle].document, selector);
+        },
+        TranslateForm: function (formToTranslate) {
+            var form = 'form_' + formToTranslate;
+            var window = form + '_win';
+            //only look one level deep to prevent multple updates for more complicated controls
+            var selector = '>*';
+            this.TranslateObj(findTop()[window][form], selector);
+        },
+        TranslateObj: function (Object, selectorToTranslate) {
+            var labelsToGet = [];
+            var reFindLabels = /\[\:?[A-Z0-9_]+\]?/gi;
+            var $object = $(Object);
+            var $content = $object.find(selectorToTranslate);
+
+            //inline funcitons
+            var fnTranslate = function (markup) {
+                var handle = markup.replace('[:', '').replace(']', '');
+                var searchLabelObj = { Handle: handle };
+                if (BEACON.Labels.IsLabelInCache(searchLabelObj)) {
+                    return BEACON.Labels.GetLabel(handle);
+                }
+            };
+            //replaces labels if valid label present
+            var fnReplaceLabels = function () {
+                $content.each(function () {
+                    var $container = $(this);
+                    var search = $container.html();
+                    var translationOccured = false;
+                    //only run if label is detected
+                    if (search.indexOf('[:') == -1) {
+                        return;
+                    }
+
+                    var updatedHTML = search.replace(reFindLabels, function (foundTxt) {
+                        //attempt translation
+                        var translation = fnTranslate(foundTxt);
+                        //if not found then queue to be translated
+                        if (translation === undefined) {
+                            var handle = foundTxt.replace('[:', '').replace(']', '');
+                            if (labelsToGet.indexOf(handle) == -1) {
+                                labelsToGet.push(handle);
+                            }
+                        } else {
+                            //then lets replace with translation
+                            foundTxt = translation;
+                            translationOccured = true;
+                        }
+                        return foundTxt;
+                    });
+
+                    if (translationOccured) {
+                        $container.html(updatedHTML);
+                    }
+                });
+            };
+            //find all labels and first round of translations (if already available)
+            fnReplaceLabels();
+            //if untranslated labels found then query server and second round of translations
+            if (labelsToGet.length > 0) {
+                //get all labels then rerun for replace
+                BEACON.GetLabelTextFromServer(labelsToGet, function (LabelData) {
+                    BEACON.Labels.AddLabelsToCache(LabelData);
+                    fnReplaceLabels();
+                });
+            }
+        }
+    },
+    initialised: false,
+    user_id: 0,
+    slider_moreButton_inner: function (moreButtonDiv, moreLabel) {
+
+        var moreLabelText = BEACON.Constants.moreLabel;
+        if (moreLabel) moreLabelText = moreLabel;
+
+        //This line is so that a more button displays even if the getLabelByHandle.aspx fails
+        moreButtonDiv.innerHTML = "<span style='display: inline-block;' class='leftMargin_medium'>" + moreLabelText + "</span><span class='noUnderline glyphicons downArrow'></span>"
+        moreButtonDiv.setAttribute("title", moreLabelText);
+    },
+    slider_lessButton_inner: function (lessButtonDiv, lessLabel) {
+        var lessLabelText = BEACON.Constants.lessLabel;
+        if (lessLabel) lessLabelText = lessLabel;
+
+        //This line is so that a less button displays even if the getLabelByHandle.aspx fails
+        lessButtonDiv.innerHTML = "<span style='display: inline-block ;'>" + lessLabelText + "</span><span class='noUnderline glyphicons upArrow'></span>"
+        lessButtonDiv.setAttribute("title", lessLabelText);
+    },
+
+    carousel_rightButton_inner: "<span class='transitionRight glyphicons transRight'></span>",
+    carousel_leftButton_inner: "<span class='transitionLeft glyphicons transLeft'></span>",
+
+    init: function (pageId, u_id) {
+        this.page.pageId = pageId; // Currently always 0 and unused
+        this.initialised = true;
+        this.user_id = u_id;
+        //this.alerts.init(u_id); // Removed one day when sorce alerts are dead.
+        this.html_editor.initOnLoad();//inialise the editor for inline contribution
+        this.accountConnections.init();//inialise the connection toolbar
+        try { EngageMentions.AllQuery() } catch (e) { }//inialise mentions
+        this.videoResolver.init();//fix for video filenames with symbols in them
+        this.lazyLoading.init();//Attaching observers for lazy loading of images and attach check to update event
+        $(document).trigger("BEACON:PAGE:ready");
+    },
+
+    getParameterByName: function (name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    },
+
+    xhrGet: function (url, returnFunction, returnContext, errorFunction) {
+
+        if (!errorFunction) errorFunction = returnFunction;
+        if (returnContext) {
+            $.ajax({ context: returnContext, type: "GET", url: url, success: returnFunction, error: errorFunction });
+        }
+        else {
+            $.ajax({ type: "GET", url: url, success: returnFunction, error: errorFunction });
+        }
+    },
+
+    xhrPost: function (url, postData, returnFunction, returnContext, errorFunction) {
+        var ajaxSettings = { type: "POST", url: url, data: postData };
+        /*If using the API then send as JSON content type*/
+        if (url.indexOf('/sorce/api/') > -1) { ajaxSettings.contentType = "application/json"; }
+
+        if (returnContext) {
+            ajaxSettings.success = returnFunction.bind(returnContext);
+        }
+        else {
+            ajaxSettings.success = returnFunction;
+        }
+        $.ajax(ajaxSettings).fail(errorFunction);
+    },
+
+    //XMLHttpRequest 2.0 HTML5 feature
+    xhrFormPost: function (url, formData, returnFunction, returnContext, progressFunction, progressParams, loadedFunction, loadedParams) {
+
+        var xhr = new XMLHttpRequest();
+
+        xhr.open("POST", url, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                newReturnFunction = returnFunction.bind(this);
+                newReturnFunction(xhr.responseText);
+            }
+        }.bind(returnContext);
+        //attach upload progress listener if passed
+        xhr.upload.addEventListener("progress", function (e) {
+            if (progressFunction != undefined) {
+                /*Default to Bytes, then check for GigaBytes, MegaBytes, KiloBytes*/
+                var currentUploadAmount = e.loaded; var totalUploadAmount = e.total; var unit = "B";
+                if (totalUploadAmount > (1024 * 1024 * 1024)) {
+                    currentUploadAmount /= (1024 * 1024 * 1024);
+                    totalUploadAmount /= (1024 * 1024 * 1024);
+                    unit = "GB";
+                } else if (totalUploadAmount > (1024 * 1024)) {
+                    currentUploadAmount /= (1024 * 1024);
+                    totalUploadAmount /= (1024 * 1024);
+                    unit = "MB";
+                } else if (totalUploadAmount > 1024) {
+                    currentUploadAmount /= 1024;
+                    totalUploadAmount /= 1024;
+                    unit = "KB";
+                }
+
+                var percentage = Math.round((e.loaded * 100) / e.total);
+                /*Add in cacluated values*/
+                e.calculated = {
+                    currentAmount: currentUploadAmount,
+                    totalAmount: totalUploadAmount,
+                    unit: unit,
+                    percentage: percentage
+                };
+                
+                progressFunction(e, progressParams);
+            }
+        }, false);
+        //attach upload finished listener if passed
+        xhr.upload.addEventListener("load", function (e) {
+            if (loadedFunction != undefined) {
+                loadedFunction(e, loadedParams);
+            }
+        }, false);
+
+        // Initiate a multipart/form-data upload
+        xhr.send(formData);
+    },
+
+    GetLabelTextFromServer: function (GetHandlesArray, callback) {
+        $.ajax({
+            url: "/sorce/Beacon/PageItem/AppAspx/generic/GetLabel.ashx",
+            type: "POST",
+            data: JSON.stringify({ 'Labels': GetHandlesArray }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                callback(data);
+            },
+
+        });
+    },
+
+    GetLabel: function (LabelArray, SearchHandle) {
+        LabelArray[0].Label;
+    },
+
+    SORCESearchKeydown: function (event) {
+        if (event === undefined) event = window.event; // fix IE
+        if (event.keyCode === 13) window.location.href = "sorceLaunch.aspx?href=" + encodeURIComponent("/sorce/app_centre/launch_form.aspx?fhandle=global_search_main&criteria=" + encodeURIComponent(document.getElementById("beaconToolbarSearchbox").value));
+    },
+
+    BEACONSiteSearchKeydown: function (event) {
+        if (event === undefined) event = window.event; // fix IE
+        if (event.keyCode === 13) window.location.href = "/sorce/beacon/?pageid=Sitesearch&searchCriteria=" + encodeURIComponent(document.getElementById("beaconToolbarSearchbox").value);
+    },
+
+    BEACONSiteSearchButtonClick: function () {
+        window.location.href = "/sorce/beacon/?pageid=Sitesearch&searchCriteria=" + encodeURIComponent(document.getElementById("beaconToolbarSearchbox").value);
+    },
+
+    CloseNotificationShade: function () {
+        //Close Notifications Shade.
+        if(BEACON.notifications.Shade.Active && $(".notificationsShadeContainer:visible").length) {
+            var toolBar_notificationA = document.getElementById("BEACON_Toolbar_Alerts_Toggle_A");
+            toolBar_notificationA.setAttribute("title", toolBar_notificationA.getAttribute("showtitle"));
+
+            BEACON.notifications.Glare.AnimateToOriginalPosition();
+            BEACON.notifications.Shade.Close();
+            BEACON.notifications.Shade.Clear();
+        }
+    },
+
+    CloseOffice365Shade: function () {
+        var $menu = $('.beaconToolbar .beaconToolbarItemWrapperAccountNotifications');
+        var $link = $menu.find('.accountNotificationsLink');
+        var $shade = $menu.find('.accountNotificationsShadeContainer');
+        var isOpen = $menu.data("isopen");
+        if (isOpen == undefined)
+            isOpen = false;
+
+        if (isOpen && $(".accountNotificationsShadeContainer:visible").length) {
+            $shade.slideUp();
+            $link.attr("title", $link.data("data-toggletitle-shown"));
+            $menu.data("isopen", !isOpen);
+        }
+        
+    },
+
+    ToggleCogMenu: function () {
+        this.CloseNotificationShade();
+        this.CloseOffice365Shade();
+
+        //Hides all NavBarDropDown's
+        if ($(".Nav_SubUL:visible").length) {
+            var navBarElement = document.querySelector("div.DesktopPrimaryNav.desktopOnly > nav > ul");
+            $(navBarElement).find('li').find('.Nav_ItemWrapper').removeClass("lihover");
+        }
+
+        var toolBar_cogA = document.getElementById("BEACON_Toolbar_Cog_Toggle_A");
+        var toggleMenu = $(".beaconToolbarAddContentUL")[0];
+
+        if (toggleMenu.style.display == "none" || toggleMenu.style.display == "") {
+            toolBar_cogA.setAttribute("title", toolBar_cogA.getAttribute("hidetitle"));
+        } else {
+            toolBar_cogA.setAttribute("title", toolBar_cogA.getAttribute("showtitle"));
+        }
+
+        $(".beaconToolbarAddContentUL").slideToggle();
+    },
+
+    ToggleFavourite: function (page_id) {
+        this.CloseNotificationShade();
+        this.CloseOffice365Shade();
+
+        //Hides all NavBarDropDown's
+        if ($(".Nav_SubUL:visible").length) {
+            var navBarElement = document.querySelector("div.DesktopPrimaryNav.desktopOnly > nav > ul");
+            $(navBarElement).find('li').find('.Nav_ItemWrapper').removeClass("lihover");
+        }
+
+        var submitURL = '/sorce/beacon/PageItem/AppAspx/ToggleFavouritePage.aspx?page_id=' + page_id;
+        var formData = new FormData();
+        var doneAction = function (retVal) {
+            var toolBar_favDiv = document.querySelector("#beaconToolbarItemWrapperFavourite");
+            var toolBar_favStar = document.querySelector("#BEACON_Toolbar_Favourite .beaconStar");
+            if (toolBar_favDiv.classList.contains("backgroundColourYellowOrange")) {
+                toolBar_favDiv.classList.remove("backgroundColourYellowOrange");
+                toolBar_favStar.title = "Favourite this page"
+            }
+            else {
+                toolBar_favDiv.classList.add("backgroundColourYellowOrange");
+                toolBar_favStar.title = "Unfavourite this page"
+            }
+        }
+
+        BEACON.xhrFormPost(submitURL, formData, doneAction, this);
+    },
+
+    ToggleBannerMenuMobile: function () {
+        var isMobile = (user_agent.indexOf("Mobile") > 0 || user_agent.indexOf("Android") > 0);
+        if (isMobile == true && isIE == true) {
+
+            if ($(".Nav_SubUL:visible").length) {
+                $(".Nav_SubUL").hide();
+
+            }
+            else {
+                $(".Nav_SubUL").show();
+            }
+        }
+    },
+
+    ToggleAContainerLIHover: function (element) {
+        this.CloseNotificationShade();
+        this.CloseOffice365Shade();
+
+        // Hide CogDropDown container.
+        if($(".beaconToolbarAddContentUL:visible").length) {
+            var toolBar_cogA = document.getElementById("BEACON_Toolbar_Cog_Toggle_A");
+            toolBar_cogA.setAttribute("title", toolBar_cogA.getAttribute("showtitle"));
+            $(".beaconToolbarAddContentUL").slideToggle();
+        }
+
+        try {
+            $(element.parentElement.parentElement).siblings().children().removeClass("lihover");
+            $(element.parentElement).toggleClass("lihover");
+        } catch (e) { }
+    },
+
+    getDevicePixelRatio: function () {
+        var ratio = 1;
+        // To account for zoom, change to use deviceXDPI instead of systemXDPI
+        if (window.screen.systemXDPI !== undefined && window.screen.logicalXDPI !== undefined && window.screen.systemXDPI > window.screen.logicalXDPI) {
+            // Only allow for values > 1
+            ratio = window.screen.systemXDPI / window.screen.logicalXDPI;
+        }
+        else if (window.devicePixelRatio !== undefined) {
+            ratio = window.devicePixelRatio;
+        }
+        return ratio;
+    },
+
+    URLParameters: function (url) {
+        var vars = [], hash;
+        var q = url.split('?')[1];
+        if (q != undefined) {
+            q = q.split('&');
+            for (var i = 0; i < q.length; i++) {
+                hash = q[i].split('=');
+                vars.push(hash[1]);
+                vars[hash[0]] = hash[1];
+            }
+        }
+        return vars;
+    },
+    invalidFileTypeError: function () {
+        BEACON.GetLabelTextFromServer(["THE_FILE_TYPE_YOU_ARE_TRYING_TO_UPLOAD_IS_INVALID_SCASE"], function (LabelData) {
+            BEACON.Labels.AddLabelsToCache(LabelData);
+            alert(BEACON.Labels.GetLabel("THE_FILE_TYPE_YOU_ARE_TRYING_TO_UPLOAD_IS_INVALID_SCASE"));
+        });
+    }
+}
+
+//The current page, and its page item instances
+BEACON.page = {
+    SPVReferrer: function () {
+        if (BEACON.getParameterByName("SPVReferrer") > "") {
+            return BEACON.getParameterByName("SPVReferrer");
+        }
+        else if (BEACON.getParameterByName("pageid") > "") {
+            return BEACON.getParameterByName("pageid");
+        }
+        else {
+            var SPVPageUrl = PageUrl
+            return SPVPageUrl
+        }
+    },
+    pageItemInstances: new Array(),
+    pageItemObjectActions: new Array(),
+    pageVariables: new Array(),
+    registerPageItemInstance: function (uniqueInstanceId, pageItemInstanceID, initialRows, incrementRows, moreRecords, transitionType, transitionProperties, currentDataFilters, boundObjects, PageItemType, isCustomPageItem, skipRecordsOnLoad, noResultsFoundMode, noResultsFoundMessage, recordsRequested, moreLabel, lessLabel, SearchingMessageShown, SearchingMessageOverride, SearchingMessageLabel, pageItemObjectID, isCustomPageItemObject) {
+
+        var existingPII = BEACON.page.pageItemInstanceById(uniqueInstanceId);
+
+        if (existingPII) {
+            existingPII = new BEACON.pageItemInstance(uniqueInstanceId, pageItemInstanceID, initialRows, incrementRows, moreRecords, transitionType, transitionProperties, currentDataFilters, boundObjects, PageItemType, isCustomPageItem, skipRecordsOnLoad, noResultsFoundMode, noResultsFoundMessage, recordsRequested, moreLabel, lessLabel, SearchingMessageShown, SearchingMessageOverride, SearchingMessageLabel, pageItemObjectID, isCustomPageItemObject);
+            BEACON.page.updatePageItemIntanceById(uniqueInstanceId, existingPII);
+            existingPII.registerActions();
+        }
+        else {
+            var PII = new BEACON.pageItemInstance(uniqueInstanceId, pageItemInstanceID, initialRows, incrementRows, moreRecords, transitionType, transitionProperties, currentDataFilters, boundObjects, PageItemType, isCustomPageItem, skipRecordsOnLoad, noResultsFoundMode, noResultsFoundMessage, recordsRequested, moreLabel, lessLabel, SearchingMessageShown, SearchingMessageOverride, SearchingMessageLabel, pageItemObjectID, isCustomPageItemObject);
+            if (PII.exists) {
+                this.pageItemInstances.push(PII);
+                PII.registerActions();
+                existingPII = BEACON.page.pageItemInstanceById(uniqueInstanceId);
+            }
+        }
+
+        if (existingPII && !document.getElementById("PIIAnchor_" + uniqueInstanceId)) {
+            var PIIAnchor = document.createElement("a");
+            PIIAnchor.setAttribute("id", "PIIAnchor_" + uniqueInstanceId);
+            PIIAnchor.setAttribute("name", "PIIAnchor_" + uniqueInstanceId);
+            $(PIIAnchor).insertBefore(existingPII.element());
+            existingPII.element().setAttribute("PII", "true");
+        }
+
+        //No results found
+        if (existingPII.totalRows < 1 && !existingPII.moreRecords && recordsRequested > -1) {
+
+            switch (existingPII.noResultsFoundMode) {
+                case "display":
+
+                    break;
+                case "hide":
+                    $(existingPII.element()).hide();
+                    break;
+                case "message":
+                    existingPII.showNoResultsMessage();
+                    break;
+                default:
+            }
+        }
+
+        //Working message for in page contribution
+        if (existingPII) {
+            existingPII.initWorkingMessage();
+            existingPII.initSiteStatLogger();
+        }
+    },
+    registerPageItemInstances: function (pageItemInstancesCollection) {
+        $('nav > ul > li').bind('touchstart', function () {
+            $(this).addClass('lihover');
+        }).bind('touchend', function () {
+            $(this).removeClass('lihover');
+        });
+        for (var i = 0; i < pageItemInstancesCollection.length; i++) {
+            BEACON.page.registerPageItemInstance(pageItemInstancesCollection[i].UniqueID, pageItemInstancesCollection[i].PageItemInstanceID, pageItemInstancesCollection[i].NumberOfRows, pageItemInstancesCollection[i].IncrementRows, pageItemInstancesCollection[i].MoreRecords, pageItemInstancesCollection[i].transitionType, pageItemInstancesCollection[i].transitionProperties, pageItemInstancesCollection[i].CurrentDataFilters, pageItemInstancesCollection[i].BoundObjects, pageItemInstancesCollection[i].PageItemType, pageItemInstancesCollection[i].isCustomPageItem, pageItemInstancesCollection[i].skipRecordsOnLoad, pageItemInstancesCollection[i].NoResultsMode, pageItemInstancesCollection[i].NoResultsMessage, pageItemInstancesCollection[i].RequestedResults, pageItemInstancesCollection[i].MoreLabel, pageItemInstancesCollection[i].LessLabel, pageItemInstancesCollection[i].SearchingMessageShown, pageItemInstancesCollection[i].SearchingMessageOverride, pageItemInstancesCollection[i].SearchingMessageLabel, pageItemInstancesCollection[i].PageItemObjectID, pageItemInstancesCollection[i].isCustomPageItemObject);
+        }
+
+        BEACON.page.localiseDates();
+
+    },
+    pageItemInstanceById: function (id) {
+        // Perhaps a more efficient way of addressing these.
+        for (var i = 0; i < this.pageItemInstances.length; i++) {
+            if (this.pageItemInstances[i].uniqueInstanceId == id) {
+                return this.pageItemInstances[i];
+            }
+        }
+        return false;
+    },
+    pageItemInstanceByChild: function (cElement) {
+        return this.pageItemInstanceById($(cElement).closest("[PII='true']").attr('id'));
+    },
+    updatePageItemIntanceById: function (id, existingPII) {
+        // Perhaps a more efficient way of addressing these.
+        for (var i = 0; i < this.pageItemInstances.length; i++) {
+            if (this.pageItemInstances[i].uniqueInstanceId == id) {
+                this.pageItemInstances[i] = existingPII;
+            }
+        }
+        return false;
+    },
+    registerPageVariables: function (passedVariablesCollection) {
+        var htmlDecodedVariables = $("<textarea/>").html(passedVariablesCollection).text();
+        this.pageVariables = JSON.parse(htmlDecodedVariables);;
+    },
+
+    pageObjectActionByObjIdAndAttributeName: function (pageItemObjectId, attributeName) {
+        // Perhaps a more efficient way of addressing these.
+        for (var i = 0; i < this.pageItemObjectActions.length; i++) {
+            if (this.pageItemObjectActions[i].pageItemObjectId == pageItemObjectId && this.pageItemObjectActions[i].attributeName == attributeName) {
+                return this.pageItemObjectActions[i];
+            }
+        }
+        return false;
+    },
+
+    localiseDates: function () {
+        var toLocalise = document.getElementsByName("BeaconDateLocalise");
+        var elemToLocalise;
+        var dateToLocalise;
+        var momentToLocalise;
+        var localDate;
+        var localiseMode;
+        var TZstring;
+        var LCstring;
+        var localMoment;
+        for (var i = 0; i < toLocalise.length;) {
+            elemToLocalise = toLocalise[i];
+            elemToLocalise.setAttribute("id", "BeaconDateLocalised");
+            elemToLocalise.setAttribute("name", "BeaconDateLocalised");
+
+            dateToLocalise = new Date(elemToLocalise.innerHTML);
+            momentToLocalise = moment(elemToLocalise.innerHTML);
+
+            localDate = dateToLocalise.toLocaleString();
+            localiseMode = elemToLocalise.getAttribute("localiseMode");
+
+            TZstring = elemToLocalise.parentElement.getAttribute("TZ");
+            LCstring = elemToLocalise.parentElement.getAttribute("LC");
+            /*if present set override localisation*/
+            if (LCstring)
+                momentToLocalise = momentToLocalise.locale(LCstring);
+
+            if (!TZstring) {
+                if (localiseMode == "fromNow") {
+                    localMoment = momentToLocalise.fromNow();
+                }
+                else {
+                    localMoment = momentToLocalise.format(localiseMode);
+                }
+            }
+            else {
+                /*momentToLocalise = moment();*/
+                localMoment = momentToLocalise.tz(TZstring).format(localiseMode);
+            }
+
+
+            elemToLocalise.innerHTML = localMoment;
+            elemToLocalise.style.display = "inline";
+        }
+
+        /*let jquery handle the loop due to IE and edge being very special when handling input fields*/
+        $('[name=BeaconDateLocaliseInput]').each(function (index) {
+            elemToLocalise = this;
+            elemToLocalise.setAttribute("name", "BeaconDateLocalisedInput");
+
+
+            if (elemToLocalise.getAttribute("UTCDateTime") && elemToLocalise.getAttribute("UTCDateTime") != "") {
+                dateToLocalise = new Date(elemToLocalise.getAttribute("UTCDateTime"));
+                momentToLocalise = moment(elemToLocalise.getAttribute("UTCDateTime"));
+
+                localDate = dateToLocalise.toLocaleString();
+
+                if (navigator.language) { momentToLocalise.locale(navigator.language); } else if (navigator.browserLanguage) { momentToLocalise.locale(navigator.browserLanguage); }
+                if (elemToLocalise.getAttribute("type") == "date") {
+                    localMoment = momentToLocalise.format("YYYY-MM-DD");
+                } else if (elemToLocalise.getAttribute("type") == "time") {
+                    localMoment = momentToLocalise.format("HH:mm:ss");
+                }
+
+                elemToLocalise.value = localMoment;
+
+            }
+        });
+
+
+    },
+    scrollTo: function (anchorName) {
+        $('html, body').animate({
+            'scrollTop': document.getElementById(anchorName).offsetTop
+        }, 1000);
+    },
+    rescaleContentImages: function () {
+        try {
+            $(".contentImage").each(function (index) {
+                var src = this.src;
+                if (src.indexOf('sampleimg.aspx') > 0) {
+                    var targetWidth = this.clientWidth * BEACON.getDevicePixelRatio();
+                    var targetHeight = this.clientHeight * BEACON.getDevicePixelRatio();
+
+                    var srcParams = BEACON.URLParameters(src);
+                    var mode = srcParams['mode'];
+                    var imagepath = srcParams['imagepath'];
+                    var width = srcParams['width'];
+                    var height = srcParams['height'];
+
+                    if (width > 0 && targetWidth > width) width = targetWidth;
+                    if (height > 0 && targetHeight > height) height = targetHeight;
+
+                    src = "/sorce/tools/sampleimg.aspx?imagepath=" + imagepath + "&mode=" + mode + "&width=" + width + "&height=" + height;
+                    this.src = src;
+                }
+            });
+        } catch (err) { }
+    },
+    ToggleClass: function (UniqueID, ClassToggleFrom, ClassToggleTo) {
+        if (UniqueID) {
+            $(UniqueID).toggleClass(ClassToggleFrom + ' ' + ClassToggleTo);
+        }
+    },
+    SlideObject: function (theObject) {
+        $(theObject).slideToggle(500);
+    },
+    ApplyReadMore: function (theObject, PropertyOverrideObj) {
+        var ReadMoreVars = {
+            // Configure/customize these variables.
+            showChar: 100,  /* How many characters are shown by default*/
+            ellipsestext: "...",
+            moretext: "[" + BEACON.Constants.moreLabel + "]",
+            lesstext: "[" + BEACON.Constants.lessLabel + "]"
+        };
+        if (PropertyOverrideObj) {
+            try { if (PropertyOverrideObj.showChar) { ReadMoreVars.showChar = parseInt(PropertyOverrideObj.showChar); } } catch (err) { }
+            try { if (PropertyOverrideObj.ellipsestext) { ReadMoreVars.ellipsestext = PropertyOverrideObj.ellipsestext; } } catch (err) { }
+            try { if (PropertyOverrideObj.moretext) { ReadMoreVars.moretext = PropertyOverrideObj.moretext; } } catch (err) { }
+            try { if (PropertyOverrideObj.lesstext) { ReadMoreVars.lesstext = PropertyOverrideObj.lesstext; } } catch (err) { }
+        }
+
+        $(theObject).each(function () {
+            if ($(this).attr('readmore') !== 'enabled') {
+                var content = $(this).html();
+
+                if (content.length > ReadMoreVars.showChar) {
+                    var c = content.substr(0, ReadMoreVars.showChar);
+                    var h = content.substr(ReadMoreVars.showChar, content.length - ReadMoreVars.showChar);
+
+                    var html = c + '<span class="moreellipses">' + ReadMoreVars.ellipsestext + '</span><span class="morecontent"><span>' + h + '</span>&nbsp;<a href="" class="morelink">' + ReadMoreVars.moretext + '</a></span>';
+
+                    $(this).attr('readmore', 'enabled').html(html);
+                }
+            }
+        });
+
+        $(document).off("click", ".morelink");
+        $(document).on("click", ".morelink", function () {
+            if ($(this).hasClass("less")) {
+                $(this).removeClass("less");
+                $(this).html(ReadMoreVars.moretext);
+            } else {
+                $(this).addClass("less");
+                $(this).html(ReadMoreVars.lesstext);
+            }
+            $(this).parent().prev().toggle();
+            $(this).prev().toggle();
+            return false;
+        });
+    }
+}
+
+BEACON.pageObjectAction = function (pageItemObjectId, pageItemUniqueId, attributeName, actionFunction) {
+    this.pageItemObjectId = pageItemObjectId;
+    this.pageItemUniqueId = pageItemUniqueId;
+    this.attributeName = attributeName;
+    this.actionFunction = actionFunction;
+}
+
+BEACON.actiondata = function (uniqueId, pageItemInstanceId, startFromRows, rowsToReturn, more, actionDataFilters, PageItemType, isCustomPageItem, noResultsMessage, noResultsMode, pageItemObjectID, isCustomPageItemObject) {
+    this.PageItemInstanceID = pageItemInstanceId;
+    this.InitialRow = startFromRows;
+    this.IncrementRows = rowsToReturn;
+    this.UniqueID = uniqueId;
+    this.RandomSeed = ActionRandomSeed;
+    this.ActionDataFilters = actionDataFilters;
+    this.PageItemType = PageItemType;
+    this.isCustomPageItem = isCustomPageItem;
+    this.PageVariables = BEACON.page.pageVariables;
+    this.NoResultsMessage = noResultsMessage;
+    this.NoResultsMode = noResultsMode;
+    this.pageItemObjectID = pageItemObjectID;
+    this.isCustomPageItemObject = isCustomPageItemObject;
+}
+
+//------------------------------
+// The pageItemInstance object
+//------------------------------
+
+BEACON.pageItemInstance = function (uniqueInstanceId, pageItemInstanceId, initialRows, incrementRows, moreRecords, transitionType, transitionProperties, currentDataFilters, boundObjects, PageItemType, isCustomPageItem, skipRecordsOnLoad, noResultsFoundMode, noResultsFoundMessage, resultsRequested, moreLabel, lessLabel, SearchingMessageShown, SearchingMessageOverride, SearchingMessageLabel, pageItemObjectID, isCustomPageItemObject) {
+    if (document.getElementById(uniqueInstanceId) == undefined) {
+        this.exists = false;
+        return false;
+    }
+    this.exists = true;
+    this.uniqueInstanceId = uniqueInstanceId;
+    this.pageItemInstanceId = pageItemInstanceId;
+    this.element = function () { return document.getElementById(this.uniqueInstanceId); };
+    this.contentElement = function () { return document.getElementById(this.uniqueInstanceId + "_content"); };
+    this.initialRows = initialRows;
+    this.totalRows = initialRows;
+    this.incrementRows = incrementRows;
+    this.moreRecords = moreRecords;
+    this.action = "nextpage";
+    this.boundObjects = boundObjects;
+    this.delayFilterTimer;
+    this.transitionProperties = transitionProperties;
+    this.PageItemType = PageItemType;
+    this.isCustomPageItem = isCustomPageItem;
+    this.skipRecordsOnLoad = skipRecordsOnLoad;
+    this.resultsRequested = resultsRequested;
+    this.noResultsFoundMode = noResultsFoundMode;
+    this.noResultsFoundMessage = noResultsFoundMessage;
+    this.moreLabel = moreLabel;
+    this.lessLabel = lessLabel;
+    this.SearchingMessageShown = SearchingMessageShown;
+    this.SearchingMessageOverride = SearchingMessageOverride;
+    this.SearchingMessageLabel = SearchingMessageLabel;
+    this.pageItemObjectID = pageItemObjectID;
+    this.isCustomPageItemObject = isCustomPageItemObject;
+
+    this.currentPage = 0;
+    try { this.pages = [this.contentElement().innerHTML]; } catch (err) { };
+
+    //this.transitionType = transitionType;
+    //If we have transitions options set against a page item instance
+    if (transitionType) {
+        eval("this.transition = BEACON.transitions." + transitionType + ";");
+        if (this.transition) this.transition.init(this);
+    }
+
+    //Load up active filters
+    this.activeFilters = currentDataFilters;
+
+    // This is going to need some refinement
+    this.registerActions = function () {
+        if (this.boundObjects) {
+            for (var i = 0; i < this.boundObjects.length; i++) {
+                var BO = this.boundObjects[i];
+                var objectElement = document.getElementById(BO.ObjectID);
+                for (var x = 0; x < BO.Bindings.length; x++) {
+                    var BOB = BO.Bindings[x];
+
+                    var attributeName = "";
+                    var attributeAction = "";
+
+
+                    if (BOB.BindingKey == "onKeyUp") {
+                        attributeName = "onkeyup";
+                    }
+                    else if (BOB.BindingKey == "onClick") {
+                        attributeName = "onclick";
+                    }
+                    else if (BOB.BindingKey == "onChange") {
+                        attributeName = "onchange";
+                    }
+                    else if (BOB.BindingKey.indexOf("interval") == 0) {
+                        attributeName = "interval";
+                    }
+
+                    if (BOB.BindingValue == "custom") {
+                        var customBinding = BOB.CustomBinding;
+                        if (objectElement !== null) {
+                            if (customBinding.Type == "singlepageview" && objectElement.tagName.toLowerCase() == "a") {
+                                attributeName = "href";
+                                var SPVPrimaryMenu = PrimaryMenuID;
+                                var SPVSecondaryMenu = SecondaryMenuID;
+                                if (SPVPrimaryMenu == 0) {
+                                    SPVPrimaryMenu = BEACON.getParameterByName("SPVPrimaryMenu");
+                                }
+                                if (SPVSecondaryMenu == 0) {
+                                    SPVSecondaryMenu = BEACON.getParameterByName("SPVSecondaryMenu");
+                                }
+                                attributeAction = customBinding.URL;
+                                attributeAction += "&SPVPrimaryMenu=" + SPVPrimaryMenu + "&SPVSecondaryMenu=" + SPVSecondaryMenu + "&SPVReferrer=" + encodeURIComponent(BEACON.page.SPVReferrer());
+                            }
+                            else {
+                                attributeAction = "";
+                                if (attributeName == "onkeyup") {
+                                    attributeAction = "try{if([9, 16, 17, 18, 19, 20, 27, 33, 34, 35, 36, 37, 38, 39, 40, 45].indexOf(event.keyCode) == -1) "
+                                }
+
+                                attributeAction += "(function (){BEACON.page.pageObjectActionByObjIdAndAttributeName('" + BO.ObjectID + "','" + attributeName + "').actionFunction();})();";
+                                if (attributeName == "onkeyup") {
+                                    attributeAction += "}catch(err){(function (){BEACON.page.pageObjectActionByObjIdAndAttributeName('" + BO.ObjectID + "','" + attributeName + "').actionFunction();})();}";
+                                }
+
+
+                                var actionFunction = BEACON.page.pageObjectActionByObjIdAndAttributeName(BO.ObjectID, attributeName);
+
+                                if (!actionFunction) {
+                                    actionFunction = new BEACON.pageObjectAction(BO.ObjectID, this.uniqueInstanceId, attributeName, "");
+                                    BEACON.page.pageItemObjectActions.push(actionFunction);
+                                }
+
+                                actionFunction.actionFunction = this.generateCustomAction(customBinding, BO.ObjectID);
+                            }
+                        }
+                    }
+                    else if (BOB.BindingValue == "delayFilter" || BOB.BindingValue == "filter" || BOB.BindingValue == "filterInstant" || BOB.BindingValue == "prevPage" || BOB.BindingValue == "nextPage" || BOB.BindingValue == "reload") {
+                        attributeAction = "";
+                        if (attributeName == "onkeyup") {
+                            attributeAction = "try{if([9, 16, 17, 18, 19, 20, 27, 33, 34, 35, 36, 37, 38, 39, 40, 45].indexOf(event.keyCode) == -1) "
+                        }
+
+                        attributeAction += "(function (){BEACON.page.pageItemInstanceById('" + this.uniqueInstanceId + "')." + BOB.BindingValue + "();})();";
+
+                        if (attributeName == "onkeyup") {
+                            attributeAction += "}catch(err){(function (){BEACON.page.pageItemInstanceById('" + this.uniqueInstanceId + "')." + BOB.BindingValue + "();})();}";
+                        }
+                    }
+
+                    if (attributeName == "interval") {
+                        if (attributeAction) {
+                            var interval = BOB.BindingKey.split(":");
+                            var intervalMS = parseInt(interval[1]);
+
+                            eval("try {clearInterval(top." + BO.ObjectID + "_interval);}catch(err){};");
+                            eval("top." + BO.ObjectID + "_interval = setInterval(attributeAction, intervalMS);");
+                        }
+                    }
+                    else {
+                        /*Ensure attribute, action and element are populated*/
+                        if (attributeName && attributeAction && objectElement) {
+                            /*only (re)apply action when its not an onclick action or doesn't has working message defined (as working message replaces onclick on init)*/
+                            if (attributeName !== "onclick" || $(objectElement).data(workingInitCompletedDataAttributeName) !== true) {
+                                objectElement.setAttribute(attributeName, attributeAction);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    this.generateCustomAction = function (customBinding, objectId) {
+        var $elem = $('#' + objectId);
+        var useWorkingMsg = $elem.data('working-disable') == true;
+        var $form = $elem.closest('form');
+        
+        if (customBinding.Type == "URL") {
+            var URL = customBinding.URL;
+
+            var doneAction = function () {
+                if (useWorkingMsg) {
+                    $form.trigger('BEACON:WRKG:finish');
+                }
+                if (customBinding.Action.indexOf('(') > 0) {
+                    eval('this.' + customBinding.Action);
+                } else {
+                    this[customBinding.Action].bind(this)();
+                }
+            }.bind(this);
+
+            if (customBinding.Mode == "hidden") {
+                return function () {
+                    URL = this.processBoundFields(URL, true);
+
+                    // do nothing for now.
+                    var actionData = {};
+
+                    var fd;
+
+                    for (var i = 0; i < customBinding.Data.length; i++) {
+
+                        if (typeof FormData == "undefined") {
+                            if (!fd) { fd = "" } else { fd += "&" };
+                            var dataName = customBinding.Data[i].Key;
+                            var dataValue = customBinding.Data[i].Value;
+                            dataValue = this.processBoundFields(dataValue, false);
+                            fd += (encodeURIComponent(dataName) + "=" + encodeURIComponent(dataValue));
+                        } else {
+                            if (!fd) fd = new FormData()
+                            var dataName = customBinding.Data[i].Key;
+                            var dataValue = customBinding.Data[i].Value;
+                            dataValue = this.processBoundFields(dataValue, false);
+                            fd.append(dataName, dataValue);
+                        }
+                    }
+
+                    if (useWorkingMsg) {
+                        $form.trigger('BEACON:WRKG:start');
+                    }
+
+                    if (fd) {
+                        if (typeof FormData == "undefined") { BEACON.xhrPost(URL, fd, doneAction, this); } else { BEACON.xhrFormPost(URL, fd, doneAction, this); };
+                    }
+                    else if (actionData) {
+                        // Do nothing.
+                        BEACON.xhrPost(URL, actionData, doneAction, this);
+                    }
+                    else {
+                        BEACON.xhrGet(URL, doneAction, this);
+                    }
+                }.bind(this);
+            }
+            else if (customBinding.Mode == "newwindow") {
+                return function () {
+                    var newURL = this.processBoundFields(URL, true);
+                    if (isMobileApp == true) {
+                        window.location.href = newURL;
+                    } else {
+                        window.open(newURL);
+                    }
+                }.bind(this);
+            }
+            else if (customBinding.Mode == "redirect") {
+                return function () {
+                    var newURL = this.processBoundFields(URL, true);
+
+                    window.location.href = newURL;
+
+                }.bind(this);
+            }
+        }
+        else if (customBinding.Type == "singlepageview") {
+            // This is no-longer called for 'a' elements
+            var URL = customBinding.URL;
+            return function () {
+                var SPVPrimaryMenu = PrimaryMenuID;
+                var SPVSecondaryMenu = SecondaryMenuID;
+                if (SPVPrimaryMenu == 0) {
+                    SPVPrimaryMenu = BEACON.getParameterByName("SPVPrimaryMenu");
+                }
+                if (SPVSecondaryMenu == 0) {
+                    SPVPrimaryMenu = BEACON.getParameterByName("SPVSecondaryMenu");
+                }
+                URL += "&SPVPrimaryMenu=" + SPVPrimaryMenu + "&SPVSecondaryMenu=" + SPVSecondaryMenu + "&SPVReferrer=" + encodeURIComponent(BEACON.page.SPVReferrer());
+                var SPVMenuSet = false;
+
+                var actionData = new BEACON.actiondata("", 0, 0, 0, 0, {}, "", "", false);
+                actionData.ActionDataFilters = new Array();
+
+                if (document.getElementById("spvForm")) { document.getElementById("spvForm").parentElement.removeChild(document.getElementById("spvForm")); };
+
+                var spvForm = document.createElement("FORM");
+                spvForm.setAttribute("action", URL);
+                spvForm.setAttribute("method", "post");
+                spvForm.setAttribute("target", "_self");
+                spvForm.setAttribute("id", "spvForm");
+                spvForm.setAttribute("name", "spvForm");
+                spvForm.setAttribute("style", "display: none;");
+
+                for (var i = 0; i < customBinding.Data.length; i++) {
+                    var dataName = customBinding.Data[i].Key;
+                    var dataValue = customBinding.Data[i].Value;
+
+                    if (dataName == "PageItemInstanceID") actionData.PageItemInstanceID = dataValue;
+                    if (dataName == "PrimaryMenu") {
+                        actionData.ActionDataFilters.push({ FilterName: dataName, FilterValue: SPVPrimaryMenu });
+                        SPVMenuSet = true;
+                    }
+                    if (dataName == "RowID") {
+                        actionData.ActionDataFilters.push({ FilterName: dataName, FilterValue: dataValue });
+                    }
+
+                    if (!SPVMenuSet) {
+                        actionData.ActionDataFilters.push({ FilterName: "PrimaryMenu", FilterValue: SPVPrimaryMenu });
+                    }
+                }
+
+                var actionDataField = document.createElement("INPUT");
+                actionDataField.setAttribute("name", "actionData");
+                actionDataField.setAttribute("value", JSON.stringify(actionData));
+                actionDataField.setAttribute("id", "actionData");
+
+                spvForm.appendChild(actionDataField);
+
+                //
+                document.body.appendChild(spvForm);
+                document.getElementById("spvForm").submit();
+            }.bind(this);
+        }
+        else if (customBinding.Type == "function") {
+            var actionFunction = customBinding.Action;
+            return function () {
+                
+                actionFunction = this.processBoundFieldsForJS(actionFunction);
+                eval(actionFunction);
+
+            }.bind(this);
+        }
+    }
+
+    this.processBoundFields = function (Text, urlEncode) {
+        var reg = new RegExp("\\[\\*[^\\*].+?]");
+
+        var result;
+        while ((result = reg.exec(Text)) !== null) {
+            var Match = result[0];
+            var variableName = result[0].substring(2, result[0].length - 1);
+            var variableValue = "";
+            if (this.boundObjects) {
+                for (var i = 0; i < this.boundObjects.length; i++) {
+                    var BO = this.boundObjects[i];
+                    for (var x = 0; x < BO.Bindings.length; x++) {
+                        var BOB = BO.Bindings[x];
+                        if (BOB.BindingKey == "bindingVar" && BOB.BindingValue == variableName) {
+                            // this assumes objects bound to filters always have a value
+                            var objectElement = document.getElementById(BO.ObjectID);
+                            if (objectElement.files && objectElement.files[0]) {
+                                return objectElement.files[0];
+                            }
+                            else {
+                                variableValue = objectElement.value;
+                                if (urlEncode) variableValue = encodeURIComponent(variableValue);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text = Text.replace(new RegExp(RegExp.quote(Match), "g"), variableValue);
+        }
+
+
+        var reg = new RegExp("\\[\\*{2}.+?]");
+
+        while ((result = reg.exec(Text)) !== null) {
+            var Match = result[0];
+            var variableName = result[0].substring(3, result[0].length - 1);
+            var boundElementIdValue = "";
+            if (this.boundObjects) {
+                for (var i = 0; i < this.boundObjects.length; i++) {
+                    var BO = this.boundObjects[i];
+                    for (var x = 0; x < BO.Bindings.length; x++) {
+                        var BOB = BO.Bindings[x];
+                        if (BOB.BindingKey == "bindingVar" && BOB.BindingValue == variableName) {
+                            // this assumes objects bound to filters always have a value
+                            boundElementIdValue = BO.ObjectID;
+                        }
+                    }
+                }
+            }
+
+            Text = Text.replace(new RegExp(RegExp.quote(Match), "g"), boundElementIdValue);
+        }
+
+        return Text;
+    }
+
+    this.processBoundFieldsForJS = function (Text) {
+        var reg = new RegExp("\\[\\*[^\\*].+?]");
+
+        var result;
+        while ((result = reg.exec(Text)) !== null) {
+            var Match = result[0];
+            var variableName = result[0].substring(2, result[0].length - 1);
+            var variableValue = "";
+            if (this.boundObjects) {
+                for (var i = 0; i < this.boundObjects.length; i++) {
+                    var BO = this.boundObjects[i];
+                    for (var x = 0; x < BO.Bindings.length; x++) {
+                        var BOB = BO.Bindings[x];
+                        if (BOB.BindingKey == "bindingVar" && BOB.BindingValue == variableName) {
+                            // this assumes objects bound to filters always have a value
+                            var objectElement = document.getElementById(BO.ObjectID);
+                            if (objectElement.files && objectElement.files[0]) {
+                                //return objectElement.files[0];
+                            }
+                            else {
+                                variableValue = JSON.stringify(objectElement.value);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text = Text.replace(new RegExp(RegExp.quote(Match), "g"), variableValue);
+        }
+
+
+        var reg = new RegExp("\\[\\*{2}.+?]");
+
+        while ((result = reg.exec(Text)) !== null) {
+            var Match = result[0];
+            var variableName = result[0].substring(3, result[0].length - 1);
+            var boundElementIdValue = "";
+            var boundElementIdDGEIString = "";
+            if (this.boundObjects) {
+                for (var i = 0; i < this.boundObjects.length; i++) {
+                    var BO = this.boundObjects[i];
+                    for (var x = 0; x < BO.Bindings.length; x++) {
+                        var BOB = BO.Bindings[x];
+                        if (BOB.BindingKey == "bindingVar" && BOB.BindingValue == variableName) {
+                            // this assumes objects bound to filters always have a value
+                            boundElementIdValue = BO.ObjectID;
+                            boundElementIdDGEIString = "document.getElementById(" + JSON.stringify(boundElementIdValue) + ")"
+                        }
+                    }
+                }
+            }
+
+            Text = Text.replace(new RegExp(RegExp.quote(Match), "g"), boundElementIdDGEIString);
+        }
+
+        return Text;
+    }
+
+    this.nextPage = function () {
+        if (this.currentPage == (this.pages.length - 1) && this.moreRecords) {
+            var thisActiondata = new BEACON.actiondata(this.uniqueInstanceId, this.pageItemInstanceId, this.totalRows + 1, this.incrementRows, this.moreRecords, this.activeFilters, this.PageItemType, this.isCustomPageItem, this.noResultsFoundMessage, this.noResultsFoundMode, this.pageItemObjectID, this.isCustomPageItemObject);
+            var url = "actions.aspx";
+            BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+                function (returnText) {
+                    var returnContent = returnText;
+                    var pageItemInstance = BEACON.page.pageItemInstanceById(returnContent.UniqueID);
+                    pageItemInstance.totalRows += returnContent.NumberOfRows;
+                    pageItemInstance.moreRecords = returnContent.MoreRecords;
+                    pageItemInstance.pages.push(returnContent.Content);
+                    pageItemInstance.transition.nextPage(pageItemInstance);
+                    pageItemInstance.PageItemType = returnContent.PageItemType;
+                    BEACON.page.registerPageItemInstances(returnContent.ChildPageItemInstances);
+                    pageItemInstance.updateBoundObjects(returnContent.BoundObjects);
+                    pageItemInstance.registerActions();
+                    $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                    $(pageItemInstance.element()).trigger("BEACON:PII:nextPage");
+                    $(pageItemInstance.element()).trigger("BEACON:PII:moreContentLoaded");
+                }
+            );
+        }
+        else {
+            this.transition.nextPage(this);
+            //$(this.element()).trigger("BEACON:PII:allUpdate");
+            $(this.element()).trigger("BEACON:PII:nextPage");
+        }
+    }
+
+    this.prevPage = function () {
+        //Perform prev page action, transition type dependant
+        if (this.pages.length > 1) this.transition.prevPage(this);
+        $(this.element()).trigger("BEACON:PII:allUpdate");
+        $(this.element()).trigger("BEACON:PII:prevPage");
+    }
+
+    this.delayFilter = function () {
+        clearTimeout(this.delayFilterTimer);
+        this.delayFilterTimer = setTimeout(function () {
+            this.filter();
+        }.bind(this), 750);
+    }
+
+    this.filter = function (doScroll) {
+        $(this.element()).show();
+        this.contentElement().innerHTML = "";
+        BEACON.searchingFeedback.addSearchingMessage(uniqueInstanceId);
+        $(this.element()).trigger("BEACON:PII:filtering");
+
+        this.updateFilterValues();
+
+        var thisActiondata = new BEACON.actiondata(this.uniqueInstanceId, this.pageItemInstanceId, 0, this.incrementRows, this.moreRecords, this.activeFilters, this.PageItemType, this.isCustomPageItem, this.noResultsFoundMessage, this.noResultsFoundMode, this.pageItemObjectID, this.isCustomPageItemObject);
+        var url = "actions.aspx";
+
+        BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+            function (returnText) {
+                var returnContent = returnText;
+                var pageItemInstance = BEACON.page.pageItemInstanceById(returnContent.UniqueID);
+                pageItemInstance.replace(returnContent.Content, returnContent.NumberOfRows, returnContent.MoreRecords, false, returnContent.BoundObjects, returnContent.ChildPageItemInstances, returnContent.NoResultsMessage, returnContent.NoResultsMode, returnContent.RequestedResults);
+                $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                $(pageItemInstance.element()).trigger("BEACON:PII:filter");
+            }
+        );
+
+        if (doScroll) {
+            BEACON.page.scrollTo("PIIAnchor_" + this.uniqueInstanceId);
+        }
+    }
+
+    this.filterInstant = function (doScroll) {
+        this.updateFilterValues();
+        this.contentElement().innerHTML = "";
+        BEACON.searchingFeedback.addSearchingMessage(uniqueInstanceId);
+        $(this.element()).trigger("BEACON:PII:filtering");
+
+        var thisActiondata = new BEACON.actiondata(this.uniqueInstanceId, this.pageItemInstanceId, 0, this.incrementRows, this.moreRecords, this.activeFilters, this.PageItemType, this.isCustomPageItem, this.noResultsFoundMessage, this.noResultsFoundMode, this.pageItemObjectID, this.isCustomPageItemObject);
+        var url = "actions.aspx";
+
+        BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+            function (returnText) {
+                var returnContent = returnText;
+                var pageItemInstance = BEACON.page.pageItemInstanceById(returnContent.UniqueID);
+                pageItemInstance.replace(returnContent.Content, returnContent.NumberOfRows, returnContent.MoreRecords, true, returnContent.BoundObjects, returnContent.ChildPageItemInstances, returnContent.NoResultsMessage, returnContent.NoResultsMode, returnContent.RequestedResults);
+                $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                $(pageItemInstance.element()).trigger("BEACON:PII:filter");
+            }
+        );
+
+        if (doScroll) {
+            BEACON.page.scrollTo("PIIAnchor_" + this.uniqueInstanceId);
+        }
+    }
+
+    this.resetPageItem = function (doScroll) {
+        this.updateFilterValues();
+
+        var operationalInitialRows = this.initialRows;
+        if (this.skipRecordsOnLoad > 0) {
+            operationalInitialRows = operationalInitialRows - this.skipRecordsOnLoad;
+        }
+
+        var thisActiondata = new BEACON.actiondata(this.uniqueInstanceId, this.pageItemInstanceId, 0, operationalInitialRows, this.moreRecords, this.activeFilters, this.PageItemType, this.isCustomPageItem, this.noResultsFoundMessage, this.noResultsFoundMode, this.pageItemObjectID, this.isCustomPageItemObject);
+        var url = "actions.aspx";
+
+        BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+            function (returnText) {
+                var returnContent = returnText;
+                var pageItemInstance = BEACON.page.pageItemInstanceById(returnContent.UniqueID);
+                pageItemInstance.replace(returnContent.Content, returnContent.NumberOfRows, returnContent.MoreRecords, true, returnContent.BoundObjects, returnContent.ChildPageItemInstances, returnContent.NoResultsMessage, returnContent.NoResultsMode, returnContent.RequestedResults);
+                $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                $(pageItemInstance.element()).trigger("BEACON:PII:reset");
+            }
+        );
+
+        if (doScroll) {
+            BEACON.page.scrollTo("PIIAnchor_" + this.uniqueInstanceId);
+        }
+    }
+
+    this.reload = function (clearObjects) {
+        /*force working message shutdown for any in the content area as those are about to be replaced*/
+        $(this.contentElement).find('form').trigger('BEACON:WRKG:finish');
+
+        $(this.element()).show();
+
+        this.updateFilterValues();
+
+        // THIS NEEDS TO BECOME TRANSITION SPECIFIC
+        if (this.transition) {
+            this.transition.reload(this);
+        }
+        else {
+            BEACON.transitions.slider.reload(this);
+        }
+
+        if (clearObjects) {
+            var clearObjectIDs = clearObjects.split(",");
+            for (var z = 0; z < clearObjectIDs.length; z++) {
+                var boundElementIdValue = "";
+                if (this.boundObjects) {
+                    for (var i = 0; i < this.boundObjects.length; i++) {
+                        var BO = this.boundObjects[i];
+                        for (var x = 0; x < BO.Bindings.length; x++) {
+                            var BOB = BO.Bindings[x];
+                            if (BOB.BindingKey == "bindingVar" && BOB.BindingValue == clearObjectIDs[z]) {
+                                try {
+                                    if (document.getElementById(BO.ObjectID).type == "file") {
+                                        var ctrl = document.getElementById(BO.ObjectID);
+                                        try {
+                                            ctrl.value = null;
+                                        } catch (ex) { }
+                                        if (ctrl.value) {
+                                            ctrl.parentNode.replaceChild(ctrl.cloneNode(true), ctrl);
+                                        }
+                                    }
+                                    else {
+                                        //reset summernote
+                                        var $elem = $('#' + BO.ObjectID);
+                                        if ($elem.length === 1 && $elem.data('richtext-enabled') && !$elem.is(':visible') && $elem.siblings('.note-editor').length > 0) {
+                                            $elem.summernote('reset');
+                                        }
+                                        //still clear element as textarea will reset back to "<p><br /></p>"
+                                        document.getElementById(BO.ObjectID).value = "";
+                                    }
+                                }
+                                catch (err) {
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    this.updateFilterValues = function () {
+        if (this.boundObjects) {
+            for (var i = 0; i < this.boundObjects.length; i++) {
+                var BO = this.boundObjects[i];
+                for (var x = 0; x < BO.Bindings.length; x++) {
+                    var BOB = BO.Bindings[x];
+                    if (BOB.BindingKey == "FilterName") {
+                        var objectElement = document.getElementById(BO.ObjectID);
+                        // this assumes objects bound to filters always have a value
+                        this.updateFilterValue(BOB.BindingValue, objectElement.value);
+                    }
+                }
+            }
+        }
+    }
+
+    this.updateBoundElementsFromFilterValues = function () {
+        if (this.boundObjects) {
+            for (var i = 0; i < this.boundObjects.length; i++) {
+                var BO = this.boundObjects[i];
+                for (var x = 0; x < BO.Bindings.length; x++) {
+                    var BOB = BO.Bindings[x];
+                    if (BOB.BindingKey == "FilterName") {
+                        var objectElement = document.getElementById(BO.ObjectID);
+                        var filterValue = "";
+                        for (var j = 0; j < this.activeFilters.length; j++) {
+                            var CDF = this.activeFilters[j];
+                            if (CDF.FilterName == BOB.BindingValue) {
+                                filterValue = CDF.FilterValue;
+                            }
+                        }
+
+                        objectElement.value = filterValue;
+                    }
+                }
+            }
+        }
+    }
+
+    this.updateFilterValue = function (filterName, filterValue) {
+        var FOUND = false;
+        for (var i = 0; i < this.activeFilters.length; i++) {
+            var CDF = this.activeFilters[i];
+            if (CDF.FilterName == filterName) {
+                FOUND = true;
+                CDF.FilterValue = filterValue;
+            }
+        }
+        if (!FOUND) {
+            this.activeFilters.push({ FilterName: filterName, FilterValue: filterValue });
+        }
+    }
+
+    // Straight forward slidedown replace of page item content (Note, this really needs to move to be transition specific)
+    this.replace = function (newContent, recordCount, moreRecords, instant, boundObjects, childInstances, NoResultsMessage, NoResultsMode, RequestedResults) {
+        this.totalRows = recordCount;
+        this.moreRecords = moreRecords;
+        this.currentPage = 0;
+        this.pages = [newContent];
+
+        this.contentElement().innerHTML = "";
+        if (instant) {
+            $(newContent).appendTo(this.contentElement());
+            BEACON.page.registerPageItemInstances(childInstances);
+            this.clearOrphanBoundObjects();
+            this.updateBoundObjects(boundObjects);
+            this.registerActions();
+        }
+        else {
+            $(this.contentElement()).hide();
+            $(newContent).appendTo(this.contentElement());
+
+            $(this.contentElement()).slideDown(750).promise().done(function () {
+                BEACON.page.registerPageItemInstances(childInstances);
+                this.clearOrphanBoundObjects();
+                this.updateBoundObjects(boundObjects);
+                this.registerActions();
+            }.bind(this));
+        }
+        try {
+            this.transition.controlMoreActions(this);
+            this.transition.clearLess(this);
+        } catch (err) { };
+
+        if (this.totalRows < 1 && !this.moreRecords && RequestedResults > -1) {
+
+            switch (NoResultsMode) {
+                case "display":
+
+                    break;
+                case "hide":
+                    $(this.element()).hide();
+                    break;
+                case "message":
+                    this.showNoResultsMessage();
+                    break;
+                default:
+            }
+        }
+
+    }
+
+    this.clearOrphanBoundObjects = function () {
+        var newBoundObjects = new Array();
+        for (var i = 0; i < this.boundObjects.length; i++) {
+            if (document.getElementById(this.boundObjects[i].ObjectID)) {
+                newBoundObjects.push(this.boundObjects[i]);
+            }
+        }
+        this.boundObjects = newBoundObjects;
+    }
+
+    this.updateBoundObjects = function (newBoundObjects) {
+        for (var i = 0; i < newBoundObjects.length; i++) {
+            var found = false;
+            for (var x = 0; x < this.boundObjects.length; x++) {
+                if (this.boundObjects[x].ObjectID == newBoundObjects[i].ObjectID) {
+                    found = true;
+                    this.boundObjects[x] = newBoundObjects[i];
+                }
+            }
+            if (!found) this.boundObjects.push(newBoundObjects[i]);
+        }
+    }
+
+    this.showNoResultsMessage = function () {
+        //create no results found div with message
+        var noResultsMessageDiv = document.createElement("DIV");
+        noResultsMessageDiv.setAttribute("class", "noResultsFoundDiv");
+        noResultsMessageDiv.innerHTML = this.noResultsFoundMessage;
+        //get the contentElement even if its a carousel
+        var contentElement = this.contentElement();
+        if (!contentElement) {
+            contentElement = document.getElementById("page_content_" + this.uniqueInstanceId + "_carousel_container");
+            contentElement.innerHTML = "";//carousel needs to be removed
+        }
+        //show the message
+        $(contentElement).hide().append(noResultsMessageDiv);
+        $(contentElement).slideDown();
+    }
+
+    /*Working message per button (with attribute data-working-disable=true) within a form element*/
+    var workingContainerSelector = 'form';
+    var workingInitCompletedDataAttributeName = 'working-init-done';
+    var workingElemToDisableSelector = '[data-working-disable=true]';
+    /*Observer for in page changes to ensure the size always fits*/
+    var weAreListening = false;
+
+    var triggerOnResizeFnc = function () {
+        $('#' + uniqueInstanceId).find(workingContainerSelector).trigger('BEACON:WRKG:resize');
+    };
+
+    var observer = new MutationObserver(function (MutRec, MutOb) {
+        var doTriggerResize = false
+        var excludedIds = ['BEACON_Toolbar_Alerts_Toggle_A', 'BEACON_Toolbar_Alerts_Count', 'beaconToolbarItemWrapperAlerts']
+        MutRec.forEach(function (item) {
+            $target = $(item.target);
+            if (
+                !doTriggerResize
+                &&
+                $target.data(workingInitCompletedDataAttributeName) !== true
+                &&
+                $target.closest(workingContainerSelector).length === 0
+                &&
+                excludedIds.indexOf($target.prop('id')) === -1
+                &&
+                !$target.hasClass('notificationObject')
+                &&
+                !$target.hasClass('notificationsGlareContainer')
+                &&
+                !$target.hasClass('notificationIntrusiveContainer')
+            ) {
+                doTriggerResize = true;
+            }
+        });
+
+        if (doTriggerResize) {
+            triggerOnResizeFnc();
+        }
+    });
+
+    var startListeningForResize = function () {
+        /*we only want this run once to prevent issues*/
+        if (weAreListening) { return; }
+        else { weAreListening = true; }
+        /*ensure the working overlay is always at the right position and size*/
+        $('#' + uniqueInstanceId).on('BEACON:PII:allUpdate', triggerOnResizeFnc);
+
+        window.addEventListener("resize", triggerOnResizeFnc);
+
+        observer.observe(document, {
+            attributes: true,
+            attributesFilter: ['style'],
+            childList: true,
+            subtree: true
+        });
+    };
+
+    var stopListeningForResize = function () {
+        /*we only want this run once to prevent issues*/
+        if (weAreListening === true) {
+            weAreListening = false;
+        } else { return; }
+        $('#' + uniqueInstanceId).off('BEACON:PII:allUpdate', triggerOnResizeFnc);
+
+        window.removeEventListener("resize", triggerOnResizeFnc);
+
+        observer.disconnect();
+    }
+
+    var generateWorkingMessage = function () {
+        /*default label to global constants*/
+        var workingLabel = BEACON.Constants.WorkingMessageLabel;
+        var workingDiv = document.createElement('div');
+        workingDiv.className = 'workingContainer';
+        workingDiv.style.display = 'none';
+        workingDiv.style.position = 'absolute';
+        /*z-index sits just behind toolbar, which is behind notifications and popups*/
+        workingDiv.style.zIndex = 1001;
+        var messageDiv = workingDiv.appendChild(document.createElement('div'));
+        messageDiv.className = 'workingContents';
+        var spinner = messageDiv.appendChild(document.createElement('span'));
+        spinner.className = 'activitySpinner spinnerSize_xxlarge';
+        var text = messageDiv.appendChild(document.createElement('span'));
+        text.className = 'workingLabel';
+        text.textContent = workingLabel;
+
+        return workingDiv;
+    }
+
+    /*Init working message*/
+    var initContainer = function ($container) {
+        var isWorking = false;
+        /*setup ready for when activated*/
+        $container.prepend(generateWorkingMessage());
+
+        var $working = $container.find('.workingContainer');
+
+        $container.on('BEACON:WRKG:finish', function () {
+            /*reset*/
+            $linksBtns = $container.find(workingElemToDisableSelector);
+            $container.find('a' + workingElemToDisableSelector).each(function () {
+                $elem = $(this);
+                $elem.prop('href', $elem.data('href'));
+            });
+            $linksBtns.removeAttr('disabled');
+            $linksBtns.data('has-clicked', false);
+
+            $working.hide();
+            isWorking = false;
+            stopListeningForResize();
+            $container.trigger('BEACON:WRKG:finished');
+        });
+
+        $container.on('BEACON:WRKG:start', function () {
+            if (isWorking) {
+                return;
+            }
+            isWorking = true;
+            /*disable all buttons*/
+            $container.find(workingElemToDisableSelector).attr('disabled', true);
+            /*disable links*/
+            $container.find('a' + workingElemToDisableSelector).each(function () {
+                $elem = $(this);
+                $elem.data('href', $elem.attr('href'));
+                /*removal is the safest way and is supported by html5!*/
+                $elem.removeAttr('href');
+            });
+            /*setup and show working message*/
+            $container.trigger('BEACON:WRKG:resize');
+            $working.show();
+            startListeningForResize();
+            $container.trigger('BEACON:WRKG:started');
+        });
+
+        $container.on('BEACON:WRKG:resize', function () {
+            if (isWorking) {
+                /*lets fix the height and width as its not aware of its parent container size!*/
+                $working.width($container.width());
+                $working.height($container.height());
+            }
+        });
+
+        /*Force links to be disabled and prevent double clicking on links and buttons*/
+        $container.find(workingElemToDisableSelector).each(function () {
+            $elem = $(this);
+            /*grab the onclick function*/
+            let onClickFunction = this.onclick;
+            /*Grab the jquery clicks from backup or init as blank array */
+            let jqueryOnClicks = this.backupJqueryClicks || [];
+            let getJqueryClicks = function (element) {
+                let clicksToProcess = [];
+                /*setup ready for backing up clicks*/
+                if (!element.backupJqueryClicks) {
+                    element.backupJqueryClicks = [];
+                }
+
+                /*Grab any new click events*/
+                if ($._data(element, 'events')) {
+                    if ($._data(element, 'events').click) {
+                        clicksToProcess = $._data(element, 'events').click;
+                    } else if ($._data($elem, 'events').events) {
+                        clicksToProcess = $._data(element, 'events').events.click;
+                    }
+                }
+
+                /*remove any from the list of clicks to process we already have*/
+                for (let jqryCount = 0; jqryCount < clicksToProcess.length; jqryCount++) {
+                    for (var existingClickCount = 0; existingClickCount < jqueryOnClicks.length; existingClickCount++) {
+                        if (clicksToProcess[jqryCount].guid === jqueryOnClicks[existingClickCount].guid) {
+                            clicksToProcess.pop(jqryCount);
+                        }
+                    }
+                }
+
+                /*update handler and get ready to fire functions*/
+                for (let jqryCount = 0; jqryCount < clicksToProcess.length; jqryCount++) {
+                    let jqueryClickDetails = clicksToProcess[jqryCount];
+                    /*Move any click events over so we can execute it when we're ready*/
+                    if (jqueryClickDetails.handler) {
+                        let clickEvent = jqueryClickDetails.handler;
+                        jqueryClickDetails.handler = function (e, status) {
+                            if (status) {
+                                if (status.workingDone === true) {
+                                    clickEvent.bind(e.target)(e);
+                                }
+                            }
+                        }
+                        jqueryOnClicks.push(jqueryClickDetails);
+                        element.backupJqueryClicks.push(jqueryClickDetails);
+                    }
+                }
+            };
+            let fireJqueryClicks = function (e) {
+                if (!jqueryOnClicks) {
+                    /*nothing to fire*/
+                    return;
+                }
+                let parameters = [e, { workingDone: true }];
+                for (let jqryCount = 0; jqryCount < jqueryOnClicks.length; jqryCount++) {
+                    /*Now we need to bind and apply the context to fully execute in the passed context (the event target)*/
+                    jqueryOnClicks[0].handler.bind(e.target).apply(e.target, parameters);
+                }
+            };
+            /*Now add our own onclick event to prevent clicking and double clicking*/
+            this.onclick = function (e) {
+                let elementContext = this;
+                getJqueryClicks(this);
+                $this = $(this);
+                if (isWorking || $this.data('has-clicked')) {
+                    e.preventDefault();
+                } else {
+                    $this.data('has-clicked', true);
+                    /*Fire working message*/
+                    $container.trigger('BEACON:WRKG:start');
+                    /*if html/richtext editor is present then fire each of the auto save of inline images*/
+                    let numOfEditors = $container.find('textarea[data-richtext-enabled=true]').length;
+                    let currentCountOfEditors = $container.find('textarea[data-richtext-enabled=true]').length;
+                    $container.find('textarea[data-richtext-enabled=true]').each(function () {
+                        /*attacht to the autoUploadFinished event on the text area*/
+                        $(this).one('BEACON:RTE:autoUploadFinished', function () {
+                            currentCountOfEditors--;
+                            /*only fire next step once all editors have completed*/
+                            if (currentCountOfEditors === 0) {
+                                if (onClickFunction) {
+                                    /*Fire the function as if it has been fired from the element itself*/
+                                    onClickFunction.bind(elementContext)(e);
+                                }
+                                fireJqueryClicks(e);
+                            }
+
+                        });
+                        /*now start the upload process for this html editor*/
+                        $(this).trigger('BEACON:RTE:autoUploadStart');
+                    });
+
+                    /*Only fire onclick here if specified and the number of html/rich text editors are 0*/
+                    if (numOfEditors === 0) {
+                        if (onClickFunction) {
+                            /*Fire the function as if it has been fired from the element itself*/
+                            onClickFunction.bind(elementContext)(e);
+                        }
+                        fireJqueryClicks(e);
+                    }
+                }
+            };
+
+            $elem.data(workingInitCompletedDataAttributeName, true);
+        });
+        /*Warn user if they try to navigate or refresh*/
+        window.addEventListener("beforeunload", function (e) {
+            if (isWorking) {
+                var message = "Changes you made may not be saved.",
+                    e = e || window.event;
+                // For IE
+                if (e) {
+                    e.returnValue = message;
+                }
+                formChanged = false;
+                // For Safari
+                return message;
+            }
+            else { return undefined; }
+
+        });
+    };
+
+    this.initWorkingMessage = function () {
+        var init = function ($elem) {
+            if ($elem.data(workingInitCompletedDataAttributeName)) {
+                return;
+            } else {
+                $elem.data(workingInitCompletedDataAttributeName, true);
+            }
+
+            $container = $elem.closest(workingContainerSelector);
+            if ($container.length > 0) {
+                if ($container.data(workingInitCompletedDataAttributeName)) {
+                    return;
+                } else {
+                    $container.data(workingInitCompletedDataAttributeName, true);
+                }
+
+                new initContainer($container);
+            }
+        }
+        //scan for buttons (expect the button to be contained within a form)
+        var $pii = $('#' + uniqueInstanceId);
+        $pii.find(workingElemToDisableSelector).each(function () {
+            $elem = $(this);
+            init($elem);
+        });
+        //add rescan for updates
+        $pii.on('BEACON:PII:allUpdate', function () {
+            /*rescan content area only*/
+            $('#'.concat(uniqueInstanceId, '_content')).find(workingElemToDisableSelector).each(function () {
+                $elem = $(this);
+                init($elem);
+            });
+        });
+    }
+    /*site stats in-page logger 
+     * - function to do the logging (made public for ease of use)
+     * NB: requires the page item to be assigned a content type or logging will fail*/
+    this.logToSiteStats = function (elemId, actionType, stringData, callback) {
+        var url = '/sorce/beacon/pageitem/appaspx/generic/PiiSiteStatLogger.ashx'
+        var formData = new FormData();
+        var siteStatLogRequest = {
+            PiiId: pageItemInstanceId,
+            ElementId: elemId,
+            ActionType: actionType,
+            StringData: stringData
+        };
+
+        if (PageItemType == "NESTED") {
+            siteStatLogRequest.PiiId = uniqueInstanceId.split('_')[0].replace('PI', '');
+            siteStatLogRequest.NestedPageItemId = pageItemInstanceId;
+            siteStatLogRequest.NestedIsCustomPageItem = isCustomPageItem;
+        }
+        formData.append("SiteStatLogRequest", JSON.stringify(siteStatLogRequest));
+
+        var runCallback = function (returnVal) {
+            if (callback !== undefined) {
+                /*best effort parsing*/
+                try {
+                    returnVal = JSON.parse(returnVal);
+                } catch (e) { }
+                callback(returnVal);
+            }
+        }
+
+        BEACON.xhrFormPost(url, formData, runCallback);
+    };
+    /*System integration of sitestat loggic */
+    var DataAttrStatsEnabled = "stats-enabled";
+    /*logic for audio and video tags */
+    var audioVideoStatLogger = function ($elem) {
+        if ($elem.data('stats-initialised') === true) { return; }
+        $elem.data('stats-initialised', true);
+
+        var elemId = Number($elem.data('stats-elemid'));
+        var elemTitle = $elem.data('stats-elemtitle');
+        var percentage = Number($elem.data('stats-percentage'));
+
+        if (!elemId > 0) { console.log('Error, elemid is not valid skipping site stats logger for:', $elem[0]); return; }
+        if (!percentage > 0) { console.log('Error, percentage is not valid skipping site stats logger for:', $elem[0]); return; }
+
+        /*events to track */
+        var eventTracking = 'play timeupdate seeking pause ended';
+        /*track how long the media has been played then logs it to sitestats*/
+        var trackStats = function (event) {
+            /*only run when media element is ready*/
+            if (this.readyState < 1) { return; }
+            if (event.type === undefined) { return; }
+            if (this.stats === undefined) {
+                this.stats = {
+                    hasLogged: false,
+                    lastPosition: this.currentTime,
+                    lastTimeStamp: event.timeStamp,
+                    timePlayed: 0
+                };
+            }
+            if (this.stats.hasLogged) { return; }
+            var stats = this.stats;
+            var $this = $(this);
+            var removeEvents = function () {
+                /*remove all events */
+                var eventsToCancel = eventTracking.split(' ');
+                for (let evCount = 0; evCount < eventsToCancel.length; evCount++) {
+                    $this.off(eventsToCancel[evCount], trackStats);
+                }
+            }
+            /*cacluate percentage of total time of the video*/
+            if (stats.percentageOfTotalTime === undefined) {
+                stats.percentageOfTotalTime = this.duration * (percentage / 100);
+                if (stats.percentageOfTotalTime <= 0 || Number.isNaN(stats.percentageOfTotalTime)) {
+                    console.log('Error, percentage calculation from track resulted in error ('.concat(stats.percentageOfTotalTime, ') stopping site stats logger for:'), $elem[0]);
+                    removeEvents();
+                    return;
+                }
+            }
+
+            /*determine the total time played*/
+            switch (event.type.toLowerCase()) {
+                case 'play':
+                    stats.startPosition = this.currentTime;
+                    break;
+                case 'seeking':
+                    stats.startPosition = this.currentTime;
+                    break;
+                case 'timeupdate':
+                case 'pause':
+                case 'ended':
+                    var positionDifferent = this.currentTime - stats.startPosition;
+                    var timePassed = (event.timeStamp - stats.lastTimeStamp) / 1000;
+                    var videoTime = this.currentTime - stats.lastPosition;
+                    /*if seeked ahead*/
+                    if (positionDifferent > 0 && timePassed < videoTime) {
+                        this.stats.timePlayed += timePassed;
+                    } else {
+                        this.stats.timePlayed += videoTime;
+                    }
+                    break;
+                default:
+                    //do nothing
+            }
+            /*update last position and timestamp of event */
+            stats.lastPosition = this.currentTime;
+            stats.lastTimeStamp = event.timeStamp;
+
+            if (stats.timePlayed > stats.percentageOfTotalTime) {
+                removeEvents();
+                stats.hasLogged = true;
+                /*get page item instance object to log against, allows for nested page item*/
+                BEACON.page.pageItemInstanceById($elem.closest('[pii=true]').prop('id'))
+                    .logToSiteStats(elemId, 'viewed', elemTitle, function (returnVal) {
+                    var consoleMessage = "Site stat logger: PIIId: ".concat(uniqueInstanceId, ", with element id: ", elemId, ".");
+                    if (returnVal.success !== true) {
+                        consoleMessage = consoleMessage.concat(" Failed to log, please check elmah.")
+                    }
+                    if (returnVal.message) {
+                        consoleMessage = consoleMessage.concat(" Message from handler: ", returnVal.message);
+                    }
+
+                    console.log(consoleMessage);
+                });
+            }
+        }
+        $elem.on(eventTracking, trackStats);
+    };
+    /*find and init any matching markup for matching sitestat logging */
+    this.initSiteStatLogger = function () {
+        var init = function ($pii) {
+            $pii.find('[data-' + DataAttrStatsEnabled + '=true]').each(function () {
+                var $elem = $(this);
+                /*stop process if not enabled*/
+                if ($elem.data(DataAttrStatsEnabled) != true) { return; }
+                switch (this.nodeName.toLowerCase()) {
+                    case "video":
+                    case "audio":
+                        audioVideoStatLogger($elem);
+                        break;
+                    default:
+                        console.log("Unsupported sitestat logger detected for:", this);
+                }
+            });
+        }
+
+        //scan for elements with sitestats enabled
+        var $pii = $('#' + uniqueInstanceId);
+        init($pii);
+
+        $pii.on('BEACON:PII:allUpdate', function () {
+            init($('#' + uniqueInstanceId + '_content'));
+        });
+    };
+}
+
+//Defines BEACON transitions and their associated code (note that the syntax differences here are intentional, easier to add new transition types.)
+BEACON.transitions = {};
+
+BEACON.transitions.slider = {
+    init: function (pageItemInstance) {
+
+
+        var moreOrLessContainer = document.createElement("div");
+        moreOrLessContainer.setAttribute("id", "more_or_less_" + pageItemInstance.uniqueInstanceId)
+        //moreOrLessContainer.setAttribute("style", "display: block; text-align: right;");
+        moreOrLessContainer.setAttribute("class", "moreOrLess ");
+
+
+        var moreButtonA = document.createElement("a");
+        moreButtonA.setAttribute("id", "page_content_more_" + pageItemInstance.uniqueInstanceId);
+        if (pageItemInstance.moreRecords) {
+            moreButtonA.setAttribute('style', 'display:inline-block;');
+        }
+        else {
+            moreButtonA.setAttribute('style', 'display:none;');
+        }
+
+        //set the inner html of the more button in this function - AJAX call, so cannot be returned. Pass it the more button div object so that it can replace the innerHTML directly
+        BEACON.slider_moreButton_inner(moreButtonA, pageItemInstance.moreLabel);
+        moreButtonA.setAttribute("href", "JavaScript:BEACON.page.pageItemInstanceById(\"" + pageItemInstance.uniqueInstanceId + "\").nextPage();");
+        //pageItemInstance.element.appendChild(moreButtonA);
+
+        moreOrLessContainer.appendChild(moreButtonA);
+
+        pageItemInstance.contentElement().parentNode.insertBefore(moreOrLessContainer, pageItemInstance.contentElement().nextSibling);
+    },
+    nextPage: function (pageItemInstance) {
+        if (pageItemInstance.currentPage < (pageItemInstance.pages.length - 1)) {
+            if (!pageItemInstance.moreRecords) $(document.getElementById("page_content_more_" + pageItemInstance.uniqueInstanceId)).hide();
+
+            if (!document.getElementById("page_content_less_" + pageItemInstance.uniqueInstanceId)) {
+                var lessButtonDiv = document.createElement("a");
+                lessButtonDiv.setAttribute("id", "page_content_less_" + pageItemInstance.uniqueInstanceId);
+                lessButtonDiv.setAttribute('style', 'display:inline-block;');
+
+                //set the inner html of the more button in this function - AJAX call, so cannot be returned. Pass it the more button div object so that it can replace the innerHTML directly
+                BEACON.slider_lessButton_inner(lessButtonDiv, pageItemInstance.lessLabel);
+                lessButtonDiv.setAttribute("href", "JavaScript:BEACON.page.pageItemInstanceById(\"" + pageItemInstance.uniqueInstanceId + "\").resetPageItem(true);");
+                //lessButtonDiv.setAttribute("href", "JavaScript:BEACON.page.pageItemInstanceById(\"" + pageItemInstance.uniqueInstanceId + "\").filterInstant();document.getElementById(\"page_content_less_" + pageItemInstance.uniqueInstanceId + "\").parentNode.removeChild(document.getElementById(\"page_content_less_" + pageItemInstance.uniqueInstanceId + "\"))");
+
+                //pageItemInstance.element.appendChild(moreButtonDiv);
+
+                $(lessButtonDiv).insertBefore(document.getElementById("page_content_more_" + pageItemInstance.uniqueInstanceId));
+            }
+
+            var slideDownContentId = "slideDownContent" + pageItemInstance.uniqueInstanceId;
+            $("<div style=\"width:100%;\" id=\"" + slideDownContentId + "\">" + pageItemInstance.pages[pageItemInstance.currentPage + 1] + "</div>").hide().appendTo(pageItemInstance.contentElement()).slideDown(750).promise().done(function () {
+                document.getElementById(slideDownContentId).parentNode.innerHTML += document.getElementById(slideDownContentId).innerHTML;
+                document.getElementById(slideDownContentId).parentNode.removeChild(document.getElementById(slideDownContentId));
+                pageItemInstance.currentPage += 1;
+
+                $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                $(pageItemInstance.element()).trigger("BEACON:PII:nextPage");
+            });
+        }
+    },
+    prevPage: function (pageItemInstance) {
+        //Nothing for slider
+    },
+    clearLess: function (pageItemInstance) {
+        document.getElementById("page_content_less_" + pageItemInstance.uniqueInstanceId).parentNode.removeChild(document.getElementById("page_content_less_" + pageItemInstance.uniqueInstanceId));
+    },
+    reload: function (pageItemInstance) {
+        var rowsToReturn;
+
+        var operationalTotalRows = pageItemInstance.totalRows;
+        if (pageItemInstance.skipRecordsOnLoad > 0) {
+            operationalTotalRows = operationalTotalRows - pageItemInstance.skipRecordsOnLoad;
+        }
+
+        if (operationalTotalRows == 0 || operationalTotalRows < pageItemInstance.incrementRows) { rowsToReturn = pageItemInstance.incrementRows } else { rowsToReturn = operationalTotalRows }
+
+        var thisActiondata = new BEACON.actiondata(pageItemInstance.uniqueInstanceId, pageItemInstance.pageItemInstanceId, 0, rowsToReturn, pageItemInstance.moreRecords, pageItemInstance.activeFilters, pageItemInstance.PageItemType, pageItemInstance.isCustomPageItem, pageItemInstance.noResultsFoundMessage, pageItemInstance.noResultsFoundMode, pageItemInstance.pageItemObjectID, pageItemInstance.isCustomPageItemObject);
+        var url = "actions.aspx";
+
+        BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+            function (returnText) {
+                var returnContent = returnText;
+                var pageItemInstance = BEACON.page.pageItemInstanceById(returnContent.UniqueID);
+                pageItemInstance.replace(returnContent.Content, returnContent.NumberOfRows, returnContent.MoreRecords, true, returnContent.BoundObjects, returnContent.ChildPageItemInstances, returnContent.NoResultsMessage, returnContent.NoResultsMode, returnContent.RequestedResults);
+                $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                $(pageItemInstance.element()).trigger("BEACON:PII:reload");
+            }
+        );
+    },
+    controlMoreActions: function (pageItemInstance) {
+        if (pageItemInstance.moreRecords) {
+            document.getElementById("page_content_more_" + pageItemInstance.uniqueInstanceId).style.display = "inline-block"
+        }
+        else {
+            document.getElementById("page_content_more_" + pageItemInstance.uniqueInstanceId).style.display = "none"
+        }
+    }
+}
+
+BEACON.transitions.filmstrip = {
+    init: function (pageItemInstance) {
+        var thisCarousel;
+        var transitionProperties = pageItemInstance.transitionProperties;
+        var thisCarouselInitDiv;
+        var thisCarouselInitContent;
+
+        eval("top.carousel_" + pageItemInstance.uniqueInstanceId + " = {deactive: false, itemInstance: pageItemInstance, activeDivNo: 1, newDiv: '', activeDiv: '', container: '', pageItemContainer: ''};");
+        eval("thisCarousel = top.carousel_" + pageItemInstance.uniqueInstanceId + ";");
+        thisCarouselInitDiv = pageItemInstance.contentElement();
+
+        thisCarouselInitDiv.innerHTML = "";
+        thisCarousel.pageItemContainer = thisCarouselInitDiv.outerHTML;
+
+        thisCarousel.currentContainer = thisCarouselInitDiv.parentNode;
+
+        thisCarousel.container = document.createElement("DIV");
+        thisCarousel.container.setAttribute("id", "page_content_" + pageItemInstance.uniqueInstanceId + "_carousel_container");
+        thisCarousel.container.style.overflow = "hidden";
+        thisCarousel.currentContainer.insertBefore(thisCarousel.container, thisCarouselInitDiv);
+        thisCarousel.currentContainer.removeChild(thisCarouselInitDiv);
+
+        var carouselTable = document.createElement("TABLE");
+        carouselTable.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_table");
+        if (!transitionProperties.showIcons) {
+            carouselTable.setAttribute('class', 'transitionCarouselTable');
+        } else {
+            carouselTable.setAttribute('class', 'transitionCarouselTableNoIcons');
+        }
+        thisCarousel.container.appendChild(carouselTable);
+        carouselTable = document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_table");
+        //carouselTable.innerHTML = "<tr id='carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow'></tr>"
+
+        var carouselTR = document.createElement("TR");
+        carouselTR.setAttribute("id", "carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow");
+        document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_table").appendChild(carouselTR);
+        if (!transitionProperties.showIcons) {
+            var carouselDivLeft = document.createElement("TD");
+            carouselDivLeft.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_left");
+            carouselDivLeft.setAttribute('class', 'transitionCarouselLeft');
+            document.getElementById("carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow").appendChild(carouselDivLeft);
+            carouselDivLeft = document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_left");
+            carouselDivLeft.innerHTML = ("<a title=\"" + BEACON.Constants.prevPageLabel + "\" class='transitionLeftOuter' style='text-decoration: none;' href=\"JavaScript:BEACON.page.pageItemInstanceById('" + pageItemInstance.uniqueInstanceId + "').prevPage();\">" + BEACON.carousel_leftButton_inner + "<img src=\"/sorce/sorce_standard_icons/1pxtrans.gif\" width=1 height=1 alt=\"" + BEACON.Constants.prevPageLabel + "\"></img></a>");
+
+            var carouselOuterDiv = document.createElement("TD");
+            carouselOuterDiv.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_outer");
+            carouselOuterDiv.setAttribute('class', 'transitionCarouselMiddle');
+            document.getElementById("carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow").appendChild(carouselOuterDiv);
+
+            var carouselDivRight = document.createElement("TD");
+            carouselDivRight.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_right");
+            carouselDivRight.setAttribute('class', 'transitionCarouselRight');
+            document.getElementById("carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow").appendChild(carouselDivRight);
+            carouselDivRight = document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_right");
+            carouselDivRight.innerHTML = ("<a title=\"" + BEACON.Constants.nextPageLabel + "\" class='transitionRightOuter' style='text-decoration: none;' href=\"JavaScript:BEACON.page.pageItemInstanceById('" + pageItemInstance.uniqueInstanceId + "').nextPage();\">" + BEACON.carousel_rightButton_inner + "<img src=\"/sorce/sorce_standard_icons/1pxtrans.gif\" width=1 height=1 alt=\"" + BEACON.Constants.nextPageLabel + "\"></img></a>");
+
+        } else {
+            //Do not display the carousel button
+            var carouselDivLeft = document.createElement("TD");
+            carouselDivLeft.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_left");
+            carouselDivLeft.setAttribute('style', 'display:none; box-sizing: border-box; overflow: hidden; width:5%;');
+            document.getElementById("carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow").appendChild(carouselDivLeft);
+            carouselDivLeft = document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_left");
+            carouselDivLeft.innerHTML = ("<a class='transitionLeftOuter' style='text-decoration: none;' href=\"JavaScript:BEACON.page.pageItemInstanceById('" + pageItemInstance.uniqueInstanceId + "').prevPage();\">" + BEACON.carousel_leftButton_inner + "</a>");
+
+            var carouselOuterDiv = document.createElement("TD");
+            carouselOuterDiv.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_outer");
+            carouselOuterDiv.setAttribute('style', 'width: 100%; overflow: hidden;');
+            document.getElementById("carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow").appendChild(carouselOuterDiv);
+
+            var carouselDivRight = document.createElement("TD");
+            carouselDivRight.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_right");
+            carouselDivRight.setAttribute('style', 'display:none; text-align: right; box-sizing: border-box;overflow: hidden; width:5%;');
+            document.getElementById("carousel_inner_" + pageItemInstance.uniqueInstanceId + "_tableRow").appendChild(carouselDivRight);
+            carouselDivRight = document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_right");
+            carouselDivRight.innerHTML = ("<a class='transitionRightOuter' style='text-decoration: none;' href=\"JavaScript:BEACON.page.pageItemInstanceById('" + pageItemInstance.uniqueInstanceId + "').nextPage();\">" + BEACON.carousel_rightButton_inner + "</a>");
+        }
+
+        var carouselDiv = document.createElement("DIV");
+        carouselDiv.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel");
+        carouselDiv.setAttribute('style', 'position: relative; overflow: hidden; width: 200%;');
+        carouselOuterDiv.appendChild(carouselDiv);
+
+        var carouselInnerDiv1 = document.createElement("DIV");
+        carouselInnerDiv1.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_inner_1");
+        carouselInnerDiv1.setAttribute('style', 'box-sizing: border-box;float: left; overflow: hidden; position: relative; width:50%; padding: 0px; left: 0px;');
+        carouselDiv.appendChild(carouselInnerDiv1);
+
+        var carouselInnerDiv2 = document.createElement("DIV");
+        carouselInnerDiv2.setAttribute("id", "page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_inner_2");
+        carouselInnerDiv2.setAttribute('style', 'box-sizing: border-box;float: left; overflow: hidden; position: relative; width:50%; padding: 0px;');
+        carouselDiv.appendChild(carouselInnerDiv2);
+
+
+        carouselInnerDiv1 = document.getElementById("page_content_inner_" + pageItemInstance.uniqueInstanceId + "_carousel_inner_1");
+        carouselInnerDiv1.innerHTML = pageItemInstance.pages[0];
+        //carouselInnerDiv2.innerHTML = pageItemInstance.pages[0];
+
+        //If the user has set any transition properties then apply then
+        if (transitionProperties.interval) {
+            setInterval(function () { BEACON.page.pageItemInstanceById(pageItemInstance.uniqueInstanceId).nextPage(); }, transitionProperties.interval);
+        }
+    },
+    nextPage: function (pageItemInstance) {
+        this.carouselMove(pageItemInstance, "right");
+        $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+    },
+    prevPage: function (pageItemInstance) {
+        this.carouselMove(pageItemInstance, "left");
+        $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+    },
+    carouselMove: function (pageItemInstance, direction) {
+        var pageItemId = pageItemInstance.uniqueInstanceId;
+        var thisCarousel;
+        eval("thisCarousel = top.carousel_" + pageItemId + ";");
+        if (!thisCarousel.deactive) {
+            thisCarousel.deactive = true;
+            if (thisCarousel.activeDivNo == 1) { thisCarousel.activeDiv = "page_content_inner_" + pageItemId + "_carousel_inner_1"; thisCarousel.newDiv = "page_content_inner_" + pageItemId + "_carousel_inner_2"; } else { thisCarousel.activeDiv = "page_content_inner_" + pageItemId + "_carousel_inner_2"; thisCarousel.newDiv = "page_content_inner_" + pageItemId + "_carousel_inner_1"; }
+            pageItemInstance.pages[pageItemInstance.currentPage] = document.getElementById(thisCarousel.activeDiv).innerHTML;
+            if (direction == "left") { this.carouselLeft(pageItemInstance, thisCarousel, thisCarousel.activeDiv, thisCarousel.newDiv); } else { this.carouselRight(pageItemInstance, thisCarousel, thisCarousel.activeDiv, thisCarousel.newDiv); }
+        }
+    },
+
+    carouselLeft: function (pageItemInstance, thisCarousel, activeDiv, newDiv) {
+        if (pageItemInstance.currentPage == 0) {
+            pageItemInstance.currentPage = pageItemInstance.pages.length - 1;
+        }
+        else {
+            pageItemInstance.currentPage -= 1;
+        }
+
+        document.getElementById(newDiv).innerHTML = pageItemInstance.pages[pageItemInstance.currentPage];
+
+        var newLeft = '-' + $('#' + activeDiv).width() + 'px';
+        document.getElementById(activeDiv).style.left = newLeft;
+        document.getElementById(newDiv).style.left = newLeft;
+        $('#' + activeDiv).before($('#' + newDiv));
+        $('#' + newDiv).animate({ 'left': 0 }, { queue: false, duration: 500 });
+        $('#' + activeDiv).animate({ 'left': 0 }, {
+            queue: false, duration: 500, complete: function () {
+
+
+                document.getElementById(activeDiv).innerHTML = "";
+
+                thisCarousel.deactive = false;
+            }
+        });
+        if (thisCarousel.activeDivNo == 1) { thisCarousel.activeDivNo = 2; } else { thisCarousel.activeDivNo = 1 }
+    },
+
+    carouselRight: function (pageItemInstance, thisCarousel, activeDiv, newDiv) {
+        if (pageItemInstance.currentPage == pageItemInstance.pages.length - 1) {
+            pageItemInstance.currentPage = 0;
+            this.carouselRightDO(pageItemInstance, thisCarousel, activeDiv, newDiv);
+        }
+        else {
+            pageItemInstance.currentPage += 1;
+            this.carouselRightDO(pageItemInstance, thisCarousel, activeDiv, newDiv);
+        }
+    },
+
+    carouselRightDO: function (pageItemInstance, thisCarousel, activeDiv, newDiv) {
+        document.getElementById(newDiv).innerHTML = pageItemInstance.pages[pageItemInstance.currentPage];
+
+        document.getElementById(activeDiv).style.left = '0px';
+        document.getElementById(newDiv).style.left = '0px';
+        $('#' + activeDiv).after($('#' + newDiv));
+        $('#' + newDiv).animate({ 'left': -$('#' + activeDiv).width() }, { queue: false, duration: 500 });
+        $('#' + activeDiv).animate(
+            { 'left': -$('#' + activeDiv).width() },
+            {
+                queue: false,
+                duration: 500,
+                complete: function () {
+                    $('#' + newDiv).after($('#' + activeDiv));
+                    document.getElementById(activeDiv).style.left = '0px';
+
+                    document.getElementById(activeDiv).innerHTML = "";
+
+                    document.getElementById(newDiv).style.left = '0px';
+                    thisCarousel.deactive = false;
+                }
+            }
+        );
+        if (thisCarousel.activeDivNo == 1) { thisCarousel.activeDivNo = 2; } else { thisCarousel.activeDivNo = 1 }
+    },
+    reload: function (pageItemInstance) {
+        var rowsToReturn;
+        var pageItemId = pageItemInstance.uniqueInstanceId;
+        var thisCarousel;
+        eval("thisCarousel = top.carousel_" + pageItemId + ";");
+
+        var currentPageNumber = pageItemInstance.currentPage;
+
+        var previousRecords = 0;
+        var startFromRecord = 0;
+
+        if (currentPageNumber == 0) {
+            previousRecords = 0;
+            startFromRecord = 0;
+            rowsToReturn = pageItemInstance.initialRows;
+        }
+        else {
+            previousRecords = pageItemInstance.initialRows + (pageItemInstance.incrementRows * (currentPageNumber - 1));
+            startFromRecord = previousRecords + 1;
+            rowsToReturn = pageItemInstance.incrementRows;
+        }
+
+        var thisActiondata = new BEACON.actiondata(pageItemInstance.uniqueInstanceId, pageItemInstance.pageItemInstanceId, startFromRecord, rowsToReturn, pageItemInstance.moreRecords, pageItemInstance.activeFilters, pageItemInstance.PageItemType, pageItemInstance.isCustomPageItem, pageItemInstance.noResultsFoundMessage, pageItemInstance.noResultsFoundMode, pageItemInstance.pageItemObjectID, pageItemInstance.isCustomPageItemObject);
+        var url = "actions.aspx";
+
+        BEACON.xhrPost(url, { actiondata: JSON.stringify(thisActiondata) },
+            function (returnText) {
+                var returnContent = returnText;
+                var pageItemInstance = BEACON.page.pageItemInstanceById(returnContent.UniqueID);
+                pageItemInstance.transition.replacePage(pageItemInstance, previousRecords, returnContent.Content, returnContent.NumberOfRows, returnContent.MoreRecords, true, returnContent.BoundObjects, returnContent.ChildPageItemInstances);
+                $(pageItemInstance.element()).trigger("BEACON:PII:allUpdate");
+                $(pageItemInstance.element()).trigger("BEACON:PII:reload");
+            }
+        );
+    },
+    replacePage: function (pageItemInstance, previousRecordCount, newContent, recordCount, moreRecords, instant, boundObjects, childInstances) {
+        pageItemInstance.totalRows = previousRecordCount + recordCount;
+        pageItemInstance.moreRecords = moreRecords;
+
+        var pageItemId = pageItemInstance.uniqueInstanceId;
+        var thisCarousel;
+        eval("thisCarousel = top.carousel_" + pageItemId + ";");
+
+        pageItemInstance.pages[pageItemInstance.currentPage] = newContent;
+
+        if (thisCarousel.activeDivNo == 1) {
+            thisCarousel.activeDiv = "page_content_inner_" + pageItemId + "_carousel_inner_1";
+        }
+        else {
+            thisCarousel.activeDiv = "page_content_inner_" + pageItemId + "_carousel_inner_2";
+        }
+
+        document.getElementById(thisCarousel.activeDiv).innerHTML = newContent;
+
+        BEACON.page.registerPageItemInstances(childInstances);
+        pageItemInstance.clearOrphanBoundObjects();
+        pageItemInstance.updateBoundObjects(boundObjects);
+        pageItemInstance.registerActions();
+
+        while (pageItemInstance.pages.length > pageItemInstance.currentPage + 1) {
+            pageItemInstance.pages.pop();
+        }
+
+        if (recordCount == 0 && pageItemInstance.currentPage > 0) {
+            pageItemInstance.transition.prevPage(pageItemInstance);
+            pageItemInstance.pages.pop();
+        }
+    },
+    clearLess: function (pageItemInstance) {
+
+    },
+    controlMoreActions: function (pageItemInstance) {
+
+    }
+
+}
+
+
+$(document).one("BEACON:PAGE:ready", function () {
+
+    var head = document.getElementsByTagName('head')[0];
+    var s = document.createElement('link');
+    s.setAttribute('type', 'text/css');
+    s.setAttribute('rel', 'stylesheet');
+    s.setAttribute('href', "/sorce/beacon/css/jquery-ui.css");
+    head.appendChild(s);
+
+    var s2 = document.createElement('link');
+    s2.setAttribute('type', 'text/css');
+    s2.setAttribute('rel', 'stylesheet');
+    s2.setAttribute('href', "/sorce/beacon/css/jquery.timepicker.css");
+    head.appendChild(s2);
+
+    try {
+        var input = document.createElement("input");
+
+        input.type = "date";
+
+        if (input.type === "date") {
+
+        } else {
+            $('.datepick').each(function () {
+                $(this).datepicker({ dateFormat: 'yy-mm-dd' });
+            });
+        }
+    } catch (e) {
+        $('.datepick').each(function () {
+            $(this).datepicker({ dateFormat: 'yy-mm-dd' });
+        });
+    }
+
+    try {
+        var input = document.createElement("input");
+
+        input.type = "time";
+
+        if (input.type === "time") {
+
+        } else {
+            $('.timepick').each(function () {
+                $(this).timepicker({ 'timeFormat': 'H:i' });
+            });
+        }
+    } catch (e) {
+        $('.timepick').each(function () {
+            $(this).timepicker({ 'timeFormat': 'H:i' });
+        });
+    }
+
+    // Experimental functionality currently disabled
+    //$( document ).ready(function() {
+    //    BEACON.page.rescaleContentImages();
+    //});
+});
+
+
+(function ($) {
+    $.extend({
+        // Case insensative $.inArray (http://api.jquery.com/jquery.inarray/)
+        // $.inArrayIn(value, array [, fromIndex])
+        //  value (type: String)
+        //    The value to search for
+        //  array (type: Array)
+        //    An array through which to search.
+        //  fromIndex (type: Number)
+        //    The index of the array at which to begin the search.
+        //    The default is 0, which will search the whole array.
+        inArrayIn: function (elem, arr, i) {
+            // not looking for a string anyways, use default method
+            if (typeof elem !== 'string') {
+                return $.inArray.apply(this, arguments);
+            }
+            // confirm array is populated
+            if (arr) {
+                var len = arr.length;
+                i = i ? (i < 0 ? Math.max(0, len + i) : i) : 0;
+                elem = elem.toLowerCase();
+                for (; i < len; i++) {
+                    if (i in arr && arr[i].toLowerCase() == elem) {
+                        return i;
+                    }
+                }
+            }
+            // stick with inArray/indexOf and return -1 on no match
+            return -1;
+        }
+    });
+})(jQuery);
+
+/*Engage action menu (.dropdownParent as the pi class and the actual dropdown as .dropdown - am element of the pi)*/
+var actionMenu = {
+    toggleMenu: function (obj) {
+        var $this = $(obj);
+        //ensure "onfocusout" is set again the toggle menu
+        this.setAutoCloseOnFocusOut(obj);
+        //ensure all other menus like this are closed (exclude the triggering one otherwise we could never toggle it closed)
+        $('.dropdownParent').not($this.closest('.dropdownParent')).find('.dropdown').hide();
+        //toggle this menu
+        $this.parents('.dropdownParent').find('.dropdown').toggle();
+    },
+    setAutoCloseOnFocusOut: function (obj) {
+        var $dropdown = $(obj).closest('.dropdownParent');
+        //only fire if focus hasn't been set
+        if ($dropdown.data('actionmenufocusset') == undefined) {
+            $dropdown.data('actionmenufocusset', true);
+            $dropdown.on('focusout', function (e) {
+                $target = $(e.relatedTarget);
+                //check we are not inside the menu
+                if ($target.closest('.dropdownParent').length == 0 && !$target.hasClass('.dropdownParent')) {
+                    $(this).find('.dropdown').hide();
+                }
+            });
+        }
+    }
+};
+
+/*Account Connection Notifications menu*/
+BEACON.accountConnections = {
+    piiSelectors: ['.pi.o365', '.pi.juggl'],
+    connectionManageURL: "/sorce/beacon/page/device_manager",
+    connectionManageLinkTitle: "Go to manage account connections page",
+    toggleShade: function () {
+        //Hides all NavBarDropDown's
+        if ($(".Nav_SubUL:visible").length) {
+            var navBarElement = document.querySelector("div.DesktopPrimaryNav.desktopOnly > nav > ul");
+            $(navBarElement).find('li').find('.Nav_ItemWrapper').removeClass("lihover");
+        }
+
+        // Hide CogDropDown container.
+        if ($(".beaconToolbarAddContentUL:visible").length) {
+            var toolBar_cogA = document.getElementById("BEACON_Toolbar_Cog_Toggle_A");
+            toolBar_cogA.setAttribute("title", toolBar_cogA.getAttribute("showtitle"));
+            $(".beaconToolbarAddContentUL").slideToggle();
+        }
+
+        BEACON.CloseNotificationShade();
+
+        var $menu = $('.beaconToolbar .beaconToolbarItemWrapperAccountNotifications');
+        var $link = $menu.find('.accountNotificationsLink');
+        var $shade = $menu.find('.accountNotificationsShadeContainer');
+        var isOpen = $menu.data("isopen");
+        if (isOpen == undefined)
+            isOpen = false;
+
+        if (isOpen == false) {
+            $shade.slideDown();
+            $link.attr("title", $link.data("data-toggletitle-hidden"));
+        }
+        else {
+            $shade.slideUp();
+            $link.attr("title", $link.data("data-toggletitle-shown"));
+        }
+        $menu.data("isopen", !isOpen);
+    },
+    generateTitle: function (oAccountEntry) {
+        /*Return the text for the various states - used for generated the glare and shade notifications*/
+        var titleText = '';
+        if (oAccountEntry["Status"] == "Reconnect") {
+            titleText = "Connection error";
+        } else {
+            titleText = "Unconnected account";
+        }
+
+        return titleText;
+    },
+    generateContentText: function (oAccountEntry) {
+        /*Return the text for the various states - used for generated the glare and shade notifications*/
+        var contentText = '';
+        if (oAccountEntry["Status"] == "Reconnect") {
+            contentText = "You are not seeing all available content because of an error with one of your account connections. ";
+            contentText += "Please <a class=\"accountNotificationsManageLink\" onclick=\"BEACON.pageTracker.setPage('accounts');\" href=\"" + this.connectionManageURL + "\" title=\"" + this.connectionManageLinkTitle + "\">manage your account connections</a> to reconnect.";
+        } else {
+            contentText = "You are not seeing all available content because of an unconnected account. ";
+            contentText += "Please <a class=\"accountNotificationsManageLink\" onclick=\"BEACON.pageTracker.setPage('accounts');\" href=\"" + this.connectionManageURL + "\" title=\"" + this.connectionManageLinkTitle + "\">manage your account connections</a> to fix this.";
+        }
+
+        return contentText;
+    },
+    generateNotifyCheckBox: function (notificationId) {
+        /*Return the text for the various states - used for generated the glare and shade notifications*/
+        var dontNotifyDiv = document.createElement("div");
+        dontNotifyDiv.className = "accountNotificationContent noNotify";
+        var dontNotifyLink = dontNotifyDiv.appendChild(document.createElement("a"));
+        dontNotifyLink.className = "accountNotificationNoNotifyButton";
+        dontNotifyLink.href = "JavaScript:void(null);";
+        dontNotifyLink.setAttribute("onclick", "BEACON.accountConnections.toggleNotify(this)");
+        dontNotifyLink.setAttribute("data-id", notificationId);
+
+        var checkBoxCSS = this.getNotifyState(notificationId) ? "check" : "unchecked";
+
+        var dontNotifyIconSpan = dontNotifyLink.appendChild(document.createElement("span"));
+        dontNotifyIconSpan.className = "accountNoNotify icon glyphicons " + checkBoxCSS;
+
+        var dontNotifyText = dontNotifyLink.appendChild(document.createElement("span"));
+        dontNotifyText.className = "accountNoNotify text";
+        dontNotifyText.textContent = "Don't notify me again";
+
+        return dontNotifyDiv;
+    },
+    generateNotification: function (oAccountEntry) {
+        /* Expected variable structure:
+            oAccountEntry.AuthProvider
+            oAccountEntry.Status
+        */
+        //generate notification
+        var notificationId = "accountAuth";
+
+        var notification = document.createElement("div");
+        notification.className = "accountNotificationObject";
+        notification.id = notificationId;
+
+        //icon
+        var iconDiv = notification.appendChild(document.createElement("div"));
+        iconDiv.className = "accountNotificationContent iconSection";
+        var iconCSS = iconDiv.appendChild(document.createElement("div"));
+        iconCSS.className = "accountNotificationIcon accountConnectionIcon";
+
+        //main content
+        var contentDiv = notification.appendChild(document.createElement("div"));
+        contentDiv.className = "accountNotificationContent contentSection";
+
+        // - title link
+        var titleLink = contentDiv.appendChild(document.createElement("a"));
+        titleLink.className = "accountNotificationContent titleLink";
+        titleLink.href = this.connectionManageURL;
+        titleLink.title = this.connectionManageLinkTitle;
+
+        // - title
+        var title = titleLink.appendChild(document.createElement("H4"));
+        title.className = "accountNotificationTitle";
+        title.textContent = this.generateTitle(oAccountEntry);
+
+        //dismiss
+        var dismissLink = contentDiv.appendChild(document.createElement("a"));
+        dismissLink.className = "accountNotificationDismiss glyphicons beaconDelete";
+        dismissLink.href = "JavaScript:void(null);";
+        dismissLink.setAttribute("onclick", "BEACON.accountConnections.dimissAccountNotification(this);");
+        dismissLink.title = "Dimiss this account notification";
+
+        // - main text
+        var mainText = contentDiv.appendChild(document.createElement("p"));
+        mainText.className = "accountNotificationText";
+        mainText.innerHTML = this.generateContentText(oAccountEntry);
+
+        // - don't notify button
+        contentDiv.appendChild(this.generateNotifyCheckBox(notificationId));
+
+        return notification;
+    },
+    launchGlareNotification: function (oAccountEntry) {
+        /* Expected variable structure:
+            oAccountEntry.AuthProvider
+            oAccountEntry.Status
+        */
+        //Setup text content variables
+        var notificationId = "accountAuth";
+        var content = this.generateContentText(oAccountEntry);
+        var nonotifycheckbox = this.generateNotifyCheckBox(notificationId).outerHTML;
+
+        /*setup notification*/
+        var uniqueID = Math.floor((Math.random() * 10000000) + 1);
+        var nB = new BEACON.notifications.notification(uniqueID, BEACON.notifications.types.INFORMATIONAL);
+
+        nB.Stored = false;
+        nB.Sticky = true;
+        nB.NotificationIcon = "accountNotificationIcon accountConnectionIcon topMargin_small rightMargin_small bottomMargin_large floatLeft";
+        nB.NotificationTitle = this.generateTitle(oAccountEntry);
+        nB.BodyText = content + nonotifycheckbox;
+        nB.DirectLink = this.connectionManageURL;
+        CreateNotificationFromObject(nB);//fire notification
+    },
+    dimissAccountNotification: function (obj) {
+        //hide the notification and remove it from the dom
+        $(obj).closest('.accountNotificationObject').slideUp(
+            function () {
+                $(this).remove();
+            });
+    },
+    toggleNotify: function (objLink) {
+        var $link = $(objLink);
+        var $icon = $link.find('.icon');
+        var $accNotif = $link.closest('.accountNotificationObject').length == 0 ? $link : $link.closest('.accountNotificationObject');
+        var id = $accNotif.prop("id");
+        if (id == "")//then lets see if its set by data attribute
+            id = $accNotif.data("id");
+        var isDoNotNotify = this.getNotifyState(id);
+        //setup toggle check box
+        function toggleCheckbox(isDoNotNotify, $icon) {
+            if (isDoNotNotify) {
+                $icon.removeClass("check");
+                $icon.addClass("unchecked");
+            }
+            else {
+                $icon.addClass("check");
+                $icon.removeClass("unchecked");
+            }
+        }
+        //toggle current check box
+        toggleCheckbox(isDoNotNotify, $icon);
+        //lets ensure if this is updated from the glare then we update the shade menu
+        if ($link.closest('.accountNotificationsShadeContainer').length == 0)
+            toggleCheckbox(isDoNotNotify, $('#' + id + ' .accountNoNotify.icon'));
+        else
+            toggleCheckbox(isDoNotNotify, $('.notificationObject .accountNotificationNoNotifyButton .accountNoNotify.icon'));
+        //toggle stored value
+        this.setNotifyState(id, !isDoNotNotify);
+    },
+    getNotifyState: function (id) {
+        /*this allow for consitency in the name for this setting*/
+        id += "_noNotify";
+        return localStorage.getItem(id) == "true";
+    },
+    setNotifyState: function (id, notNotified) {
+        /*this allow for consitency in the name for this setting*/
+        id += "_noNotify";
+        localStorage.setItem(id, notNotified);
+    },
+    fireEventForProvider: function (oAccountEntry) {
+        var status = oAccountEntry['Status'] == "Connected" ? "Success" : "Error";
+        var authProvider = oAccountEntry['AuthProvider'];
+        for (var i = 0; i < this.piiSelectors.length; i++) {
+            var piiSelector = this.piiSelectors[i];
+            $(piiSelector).trigger("BEACON:PII:connectedAccount" + status, authProvider);
+        }
+    },
+    numPiiRequireAccount: function () {
+        var totalPIIs = 0;
+        //cycle through all selectors and find total number of pii that require an account
+        for (var i = 0; i < this.piiSelectors.length; i++) {
+            var piiSelector = this.piiSelectors[i];
+            totalPIIs += $(piiSelector).length;
+        }
+
+        return totalPIIs;
+    },
+    init: function () {
+        var api = this;//used for a nameless refernce to this level of the Engage API
+        //fire trigger to inialise any page item using a connected account
+        $(document).trigger("BEACON:PAGE:connectedAccountInit");
+        //stop processing if there are no page items on the page that require a connected account
+        if (this.numPiiRequireAccount() == 0)
+            return;
+
+        //setup variables
+        var $menu = $('.beaconToolbar .beaconToolbarItemWrapperAccountNotifications');
+        var $count = $menu.find('.ToolbarAccountNotificationsCount');
+        var $shadeDefaultMessage = $menu.find('.accountNotification_none');
+        var $shadeContent = $menu.find('.accountNotificationsShadeContent');
+
+        //get data - expected structure: "{"SystemMessage":"Connected account status check complete","AuthentiationProviderStatuses":[{"AuthProvider":"Microsoft Azure AD","Status":"Connected","message":"Account connected"}]}"
+        var connectedAccountData = BEACON.page.connectedAccounts;
+        var numOfNotifications = 0;
+        var accountNotifications = undefined;
+
+        if (connectedAccountData) { accountNotifications = connectedAccountData['AuthentiationProviderStatuses']; }
+        var accNotifId = "accountAuth";
+
+        //show the menu
+        $menu.show();
+
+        //add each one if it is not an empty array or undefined
+        if (accountNotifications !== undefined && accountNotifications !== [])
+            for (var i = 0; i < accountNotifications.length; i++) {
+                var oAccountEntry = accountNotifications[i];
+
+                api.fireEventForProvider(oAccountEntry);
+
+                //do nothing if the account is conencted
+                if (oAccountEntry.Status != "Connected") {
+                    //if we are here then we still need an accurate count as that will be updated anyway
+                    if (oAccountEntry.AuthProvider == "Microsoft Azure AD" && $(".o365").length > 0) {
+                        numOfNotifications++;
+                    }
+                    else if (oAccountEntry.AuthProvider == "Juggl" && $(".juggl").length > 0) {
+                        numOfNotifications++;
+                    }
+                }
+            }
+        //find all added notification objects
+        var $notifications = $menu.find('.accountNotificationObject');
+
+        if (numOfNotifications > 0) {
+            //only run the generation if it doesn't exists
+            if ($("#" + accNotifId).length == 0) {
+                var oAccNotif = api.generateNotification(oAccountEntry);
+                if (oAccNotif != null) {
+                    if (!api.getNotifyState(accNotifId))//lets fire off a non stored notification so it can shown with other notifications
+                    {
+                        //only fire this when inialisation of connected accounts is completed or when notifications has finished inialisation
+                        $(document).on("BEACON:PAGE:connectedAccountInitCompleted BEACON:PAGE:notificationsReady", function () {
+                            api.launchGlareNotification(oAccountEntry);
+                        });
+                    }
+                    //keep it hidden for now we will slide this in on update and add it to the shade
+                    oAccNotif.style.display = "none";
+                    $shadeContent.append(oAccNotif);
+                }
+            }
+            //lets refresh the link to notification objects
+            $notifications = $menu.find('.accountNotificationObject');
+            //process the changes
+            $menu.addClass('some');
+            $count.html("&nbsp;" + numOfNotifications);
+            $shadeDefaultMessage.slideUp();
+            $notifications.slideDown();
+        }
+        else {
+            $menu.removeClass('some');
+            $count.html("");
+            $shadeDefaultMessage.slideDown();
+            $notifications.slideUp();
+        }
+        //add extra onclick to the manage connections link in the shade
+        $('.accountNotificationsShadeFooter .accountNotificationsManageLink').click(function () {
+            BEACON.pageTracker.setPage("accounts");
+        });
+
+        //let fire a trigger to indicate that we have finished
+        $(document).trigger("BEACON:PAGE:connectedAccountInitCompleted");
+    }
+};
+
+BEACON.pageTracker = {
+    defaultPrefix: "BEACON",
+    setPage: function (suffix, overrideURL) {
+        //we need the suffix to prevent conflicts
+        if (suffix == undefined)
+            return false;
+
+        //if override url is not passed then default to the current page url
+        if (overrideURL == undefined)
+            overrideURL = document.URL;
+
+        //setup JSON blob
+        var value = {
+            date: new Date()
+            , url: overrideURL
+        };
+
+        localStorage.setItem(this.defaultPrefix + suffix, JSON.stringify(value));
+    },
+    getPage: function (suffix) {
+        //we need the suffix to prevent conflicts
+        if (suffix == undefined)
+            return null;
+
+        //grab the data
+        var data = localStorage.getItem(this.defaultPrefix + suffix);
+        if (data != null)
+            return JSON.parse(data);
+        else
+            return data;
+    },
+    doRedirect: function (suffix) {
+        var blank = JSON.stringify({
+            date: new Date()
+            , url: ""
+        });
+        var pgData = this.getPage(suffix);
+        //set to blank
+        localStorage.setItem(this.defaultPrefix + suffix, blank);
+        //if the retreived url is blank 
+        if (pgData == null)
+            window.history.back();//then use back button
+        else
+            document.location.href = pgData.url;//or do the redirect
+    }
+};
+
+BEACON.searchingFeedback = {
+    generateSearchingMessage: function (overrideText) {
+        var searchingText = overrideText == undefined ? BEACON.Constants.SearchingMessageLabel : overrideText;
+
+        var searchingDiv = document.createElement('div');
+        searchingDiv.className = "searchInProgressMessage";
+        var spinnerSpan = searchingDiv.appendChild(document.createElement('span'));
+        spinnerSpan.className = "activitySpinner tableCell topPad_small";
+        var textSpan = searchingDiv.appendChild(document.createElement('span'));
+        textSpan.className = "tableCell alignMiddle leftPad_large";
+        textSpan.textContent = searchingText;
+
+        return searchingDiv;
+    },
+    addSearchingMessage: function (piiID) {
+        var pii = BEACON.page.pageItemInstanceById(piiID);
+        var searchingDiv;
+
+        //Check searching feedback is enabled
+        if (!pii.SearchingMessageShown) {
+            //if not do nothing
+            return;
+        }
+
+        //Generate with or without override text
+        if (pii.SearchingMessageOverride)
+            searchingDiv = this.generateSearchingMessage(pii.SearchingMessageLabel);
+        else
+            searchingDiv = this.generateSearchingMessage();
+
+        searchingDiv.id = "searching_" + piiID;
+        searchingDiv.style.display = "none";
+        pii.contentElement().appendChild(searchingDiv);
+        $('#searching_' + piiID).slideDown();
+    },
+    removeSearchingMessage: function (piiID) {
+        var $searching = $('#searching_' + piiID);
+        if ($searching.length > 0) {
+            //clear searching message
+            $searching.hide("slow", function () {
+                $searching.remove();
+            });
+        }
+    }
+};
+
+//Ensure html video elements can play videos with symbols in them
+BEACON.videoResolver = {
+    init: function () {
+        $("[pii=true]").each(this.setupResolver);
+    },
+    setupResolver: function (index, oPII) {
+        var $pii = $(oPII);
+        //run the check for first time run
+        var $sources = $pii.find("source[data-filename]");
+        $sources.each(BEACON.videoResolver.encodeFileName);
+        //add this to be run on every update
+        $pii.on("BEACON:PII:allUpdate", function () {
+            $pii.find("source[data-filename]").each(BEACON.videoResolver.encodeFileName);
+        });
+    },
+    encodeFileName: function (index, oSource) {
+        var $Source = $(oSource);
+        var $Video = $Source.closest("video");
+        var filename = $Source.data("filename");
+        var filePath = $Source.data("filepath");
+        var hasBeenRebuilt = $Video.data('hasBeenRebuilt');
+        if (hasBeenRebuilt !== true && filename.trim().length > 0 && filePath.trim().length > 0) {
+            var srcWithEncodedFileName = filePath + encodeURIComponent(filename) + ".mp4?instance=" + $Video.prop("id") + " codecs=avc1.42E01E,mp4a.40.2";
+            //update the source tag
+            $Source.attr("src", srcWithEncodedFileName);
+            //ensure the video tag gets the updated source
+            $Video.attr("src", srcWithEncodedFileName);
+            $Video.data('hasBeenRebuilt', true);
+        }
+    }
+};
+
+//Search for keywords within the user agent string.  When a match is found, add a corresponding class to the html element and return.
+function addUserAgentClass(keywords) {
+    for (var i = 0; i < keywords.length; i++) {
+        if (navigator.userAgent.indexOf(keywords[i]) != -1) {
+            $("html").addClass(keywords[i].toLowerCase());
+            return; //Once we find and process a matching keyword, return to prevent less "specific" classes from being added
+        }
+    }
+}
+
+addUserAgentClass(["Chrome", "Firefox", "MSIE", "Trident", "Safari", "Opera", "Mozilla"]); //Browsers listed generally from most-specific to least-specific
+addUserAgentClass(["Android", "iPhone", "iPad", "Linux", "Mac", "Windows"]); //Platforms, also in order of specificity
+
+
+//Integrate summernote editor
+BEACON.html_editor = {
+    mentionsHelperClass: 'autocomplete-textarea',
+    mentionsDropdownSelector: '.dropdown-menu.textcomplete-dropdown',
+    labelHandles: ["RETURN_TO_CONTENT_SCASE", "FULL_SCREEN_SCASE", "ADD_IMAGE_SCASE", "PASTE_WITH_FORMATTING_SCASE", "PASTE_OPTIONS_SCASE", "TEXT_ONLY_SCASE",
+        "IMAGE_ATTRIBUTES_CCASE", "ALT_TEXT_SCASE", "TITLE", "LINK_URL_OBRACKET_LEAVE_BLANK_FOR_NONE_CBRACKET_SCASE",
+        "OPEN_IN_NEW_WINDOW_SCASE", "OK_SCASE","FOLLOWING_FILES_INVALID_SCASE",
+        /*used in media library popup front end*/
+        "IMAGE_SCASE", "IMAGE_UPLOAD_COMPLETE_SCASE", "IMAGE_UPLOAD_FAILED_SCASE", "AN_ERROR_OCCURRED_WHILST_UPLOADING_THE_FILE__SCASE"
+    ],
+    defaultEditorConfig: {
+        focus: false,
+        minHeight: 405,
+        disableDragAndDrop: true,
+        defaultProtocol: 'https://',
+        popover: {
+            image: [
+                ['attributes', ['imageAttributes']],
+                ['imageResize', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+                ['float', ['floatLeft', 'floatRight', 'floatNone']],
+                ['remove', ['removeMedia']]
+            ], table: [
+                ['add', ['addRowDown', 'addRowUp', 'addColLeft', 'addColRight']],
+                ['delete', ['deleteRow', 'deleteCol', 'deleteTable']],
+            ],
+            link: [['link', ['editAdvLink', 'unlink']]]
+        },
+        /*if this config is changed check both initInPage and initClassicform*/
+        toolbar: [
+            ['font', ['bold', 'italic', 'underline']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['style', ['style']],
+            ['insert', ['advLink', 'video', 'mediaLib']],
+            ['table', ['table']],
+            ['view', ['toggleFullScreen']]
+        ],
+        cleaner: {
+            action: 'paste',
+            keepHtml: true,
+            keepTagContents: ['abbr','acronym','address','area','article','aside','audio','b','base','basefont','beaconregion','bdi','bdo','bgsound','big','blink','blockquote','body','br','button','canvas','caption','center','cite','code','content','data','datalist','dd','del','details','dfn','dialog','dir','div','dl','dt','em','embed','fieldset','figcaption','figure','font','footer','form','frame','frameset','head','header','h1','h2','h3','h4','h5','h6','hgroup','hr','html','i','iframe','image','img','input','ins','kbd','keygen','label','legend','li','link','main','map','mark','marquee','menu','menuitem','meta','meter','nav','nobr','noembed','noframes','noscript','object','ol','optgroup','option','output','param','picture','plaintext','portal','pre','progress','q','rb','rp','rt','rtc','ruby','s','samp','script','section','select','shadow','slot','small','source','spacer','span','strike','strong','style','sub','summary','sup','table','tbody','td','template','textarea','tfoot','th','thead','time','title','tr','track','tt','u','ul','var','video','wbr','xmp','accesskey','autocapitalize','autofocus','class','contenteditable','contextmenu','data-*','dir','draggable','enterkeyhint','hidden','id','inputmode','is','itemid','itemprop','itemref','itemscope','itemtype','lang','nonce','part','slot','spellcheck','style','tabindex','title','translate','x-ms-acceleratorkey','x-ms-format-detection','input'], //Remove tags and keep the contents
+            badTags: ['applet', 'col', 'colgroup', 'embed', 'noframes', 'iframe', 'noscript', 'script', 'style', 'head'], 
+            badAttributes: ['bgcolor', 'border', 'cellpadding', 'cellspacing', 'height', 'lang', 'id', 'onclick', 'onload', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'start', 'style', 'class', 'valign', 'width'], /*Remove attributes from remaining tags*/
+            limitChars: 0, // 0|# 0 disables option
+            limitDisplay: 'none', // none|text|html|both
+            limitStop: false, // true/false
+            notTimeOut: 850,
+            imagePlaceholder: ''
+        },
+        AdvancedDragAndDrop: {
+            enabled: true
+        }
+    },
+    AllOptionsEditorConfig: {
+        focus: false,
+        minHeight: 405,
+        disableDragAndDrop: true,
+        defaultProtocol: 'https://',
+        popover: {
+            image: [
+                ['attributes', ['imageAttributes']],
+                ['imageResize', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+                ['float', ['floatLeft', 'floatRight', 'floatNone']],
+                ['remove', ['removeMedia']]
+            ], table: [
+                ['add', ['addRowDown', 'addRowUp', 'addColLeft', 'addColRight']],
+                ['delete', ['deleteRow', 'deleteCol', 'deleteTable']],
+            ],
+            link: [['link', ['editAdvLink', 'unlink']]]
+        },
+        /*if this config is changed check both initInPage and initClassicform*/
+        toolbar: [
+            ['font', ['bold', 'italic', 'underline']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['style', ['style']],
+            ['insert', ['advLink', 'video', 'mediaLib', 'formatPaste']],
+            ['table', ['table']],
+            ['view', ['codeview','toggleFullScreen']]
+        ],
+        cleaner: {
+            action: 'paste',
+            keepHtml: true,
+            keepTagContents: ['abbr','acronym','address','area','article','aside','audio','b','base','basefont','beaconregion','bdi','bdo','bgsound','big','blink','blockquote','body','br','button','canvas','caption','center','cite','code','content','data','datalist','dd','del','details','dfn','dialog','dir','div','dl','dt','em','embed','fieldset','figcaption','figure','font','footer','form','frame','frameset','head','header','h1','h2','h3','h4','h5','h6','hgroup','hr','html','i','iframe','image','img','input','ins','kbd','keygen','label','legend','li','link','main','map','mark','marquee','menu','menuitem','meta','meter','nav','nobr','noembed','noframes','noscript','object','ol','optgroup','option','output','param','picture','plaintext','portal','pre','progress','q','rb','rp','rt','rtc','ruby','s','samp','script','section','select','shadow','slot','small','source','spacer','span','strike','strong','style','sub','summary','sup','table','tbody','td','template','textarea','tfoot','th','thead','time','title','tr','track','tt','u','ul','var','video','wbr','xmp','accesskey','autocapitalize','autofocus','class','contenteditable','contextmenu','data-*','dir','draggable','enterkeyhint','hidden','id','inputmode','is','itemid','itemprop','itemref','itemscope','itemtype','lang','nonce','part','slot','spellcheck','style','tabindex','title','translate','x-ms-acceleratorkey','x-ms-format-detection','input'], //Remove tags and keep the contents
+            badTags: ['applet', 'col', 'colgroup', 'embed', 'noframes', 'iframe', 'noscript', 'script', 'style', 'head'], 
+            badAttributes: ['bgcolor', 'border', 'cellpadding', 'cellspacing', 'height', 'lang', 'id', 'onclick', 'onload', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'start', 'style', 'class', 'valign', 'width'], /*Remove attributes from remaining tags*/
+            limitChars: 0, // 0|# 0 disables option
+            limitDisplay: 'none', // none|text|html|both
+            limitStop: false, // true/false
+            notTimeOut: 850,
+            imagePlaceholder: ''
+        },
+        AdvancedDragAndDrop: {
+            enabled: true
+        }
+    },
+    PasteOnlyEditorConfig: {
+        focus: false,
+        minHeight: 405,
+        disableDragAndDrop: true,
+        defaultProtocol: 'https://',
+        popover: {
+            image: [
+                ['attributes', ['imageAttributes']],
+                ['imageResize', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+                ['float', ['floatLeft', 'floatRight', 'floatNone']],
+                ['remove', ['removeMedia']]
+            ], table: [
+                ['add', ['addRowDown', 'addRowUp', 'addColLeft', 'addColRight']],
+                ['delete', ['deleteRow', 'deleteCol', 'deleteTable']],
+            ],
+            link: [['link', ['editAdvLink', 'unlink']]]
+        },
+        /*if this config is changed check both initInPage and initClassicform*/
+        toolbar: [
+            ['font', ['bold', 'italic', 'underline']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['style', ['style']],
+            ['insert', ['advLink', 'video', 'mediaLib', 'formatPaste']],
+            ['table', ['table']],
+            ['view', ['toggleFullScreen']]
+        ],
+        cleaner: {
+            action: 'paste',
+            keepHtml: true,
+            keepTagContents: ['abbr','acronym','address','area','article','aside','audio','b','base','basefont','beaconregion','bdi','bdo','bgsound','big','blink','blockquote','body','br','button','canvas','caption','center','cite','code','content','data','datalist','dd','del','details','dfn','dialog','dir','div','dl','dt','em','embed','fieldset','figcaption','figure','font','footer','form','frame','frameset','head','header','h1','h2','h3','h4','h5','h6','hgroup','hr','html','i','iframe','image','img','input','ins','kbd','keygen','label','legend','li','link','main','map','mark','marquee','menu','menuitem','meta','meter','nav','nobr','noembed','noframes','noscript','object','ol','optgroup','option','output','param','picture','plaintext','portal','pre','progress','q','rb','rp','rt','rtc','ruby','s','samp','script','section','select','shadow','slot','small','source','spacer','span','strike','strong','style','sub','summary','sup','table','tbody','td','template','textarea','tfoot','th','thead','time','title','tr','track','tt','u','ul','var','video','wbr','xmp','accesskey','autocapitalize','autofocus','class','contenteditable','contextmenu','data-*','dir','draggable','enterkeyhint','hidden','id','inputmode','is','itemid','itemprop','itemref','itemscope','itemtype','lang','nonce','part','slot','spellcheck','style','tabindex','title','translate','x-ms-acceleratorkey','x-ms-format-detection','input'], //Remove tags and keep the contents
+            badTags: ['applet', 'col', 'colgroup', 'embed', 'noframes', 'iframe', 'noscript', 'script', 'style', 'head'], 
+            badAttributes: ['bgcolor', 'border', 'cellpadding', 'cellspacing', 'height', 'lang', 'id', 'onclick', 'onload', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'start', 'style', 'class', 'valign', 'width'], /*Remove attributes from remaining tags*/
+            limitChars: 0, // 0|# 0 disables option
+            limitDisplay: 'none', // none|text|html|both
+            limitStop: false, // true/false
+            notTimeOut: 850,
+            imagePlaceholder: ''
+        },
+        AdvancedDragAndDrop: {
+            enabled: true
+        }
+    },
+    CodeViewOnlyEditorConfig: {
+        focus: false,
+        minHeight: 405,
+        disableDragAndDrop: true,
+        defaultProtocol: 'https://',
+        popover: {
+            image: [
+                ['attributes', ['imageAttributes']],
+                ['imageResize', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+                ['float', ['floatLeft', 'floatRight', 'floatNone']],
+                ['remove', ['removeMedia']]
+            ], table: [
+                ['add', ['addRowDown', 'addRowUp', 'addColLeft', 'addColRight']],
+                ['delete', ['deleteRow', 'deleteCol', 'deleteTable']],
+            ],
+            link: [['link', ['editAdvLink', 'unlink']]]
+        },
+        /*if this config is changed check both initInPage and initClassicform*/
+        toolbar: [
+            ['font', ['bold', 'italic', 'underline']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['style', ['style']],
+            ['insert', ['link', 'video', 'mediaLib']],
+            ['table', ['table']],
+            ['view', ['codeview','toggleFullScreen']]
+        ],
+        cleaner: {
+            action: 'paste',
+            keepHtml: true,
+            keepTagContents: ['abbr','acronym','address','area','article','aside','audio','b','base','basefont','beaconregion','bdi','bdo','bgsound','big','blink','blockquote','body','br','button','canvas','caption','center','cite','code','content','data','datalist','dd','del','details','dfn','dialog','dir','div','dl','dt','em','embed','fieldset','figcaption','figure','font','footer','form','frame','frameset','head','header','h1','h2','h3','h4','h5','h6','hgroup','hr','html','i','iframe','image','img','input','ins','kbd','keygen','label','legend','li','link','main','map','mark','marquee','menu','menuitem','meta','meter','nav','nobr','noembed','noframes','noscript','object','ol','optgroup','option','output','param','picture','plaintext','portal','pre','progress','q','rb','rp','rt','rtc','ruby','s','samp','script','section','select','shadow','slot','small','source','spacer','span','strike','strong','style','sub','summary','sup','table','tbody','td','template','textarea','tfoot','th','thead','time','title','tr','track','tt','u','ul','var','video','wbr','xmp','accesskey','autocapitalize','autofocus','class','contenteditable','contextmenu','data-*','dir','draggable','enterkeyhint','hidden','id','inputmode','is','itemid','itemprop','itemref','itemscope','itemtype','lang','nonce','part','slot','spellcheck','style','tabindex','title','translate','x-ms-acceleratorkey','x-ms-format-detection','input'], //Remove tags and keep the contents
+            badTags: ['applet', 'col', 'colgroup', 'embed', 'noframes', 'iframe', 'noscript', 'script', 'style', 'head'], 
+            badAttributes: ['bgcolor', 'border', 'cellpadding', 'cellspacing', 'height', 'lang', 'id', 'onclick', 'onload', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'start', 'style', 'class', 'valign', 'width'], /*Remove attributes from remaining tags*/
+            limitChars: 0, // 0|# 0 disables option
+            limitDisplay: 'none', // none|text|html|both
+            limitStop: false, // true/false
+            notTimeOut: 850,
+            imagePlaceholder: ''
+        },
+        AdvancedDragAndDrop: {
+            enabled: true
+        }
+    },
+    CommentsEditorConfig: {
+        focus: false,
+        minHeight: 405,
+        disableDragAndDrop: true,
+        defaultProtocol: 'https://',
+        popover: {
+            image: [
+                ['attributes', ['imageAttributes']],
+                ['imageResize', ['resizeFull', 'resizeHalf', 'resizeQuarter', 'resizeNone']],
+                ['float', ['floatLeft', 'floatRight', 'floatNone']],
+                ['remove', ['removeMedia']]
+            ],
+            link: [['link', ['editAdvLink', 'unlink']]]
+        },
+        /*if this config is changed check both initInPage and initClassicform*/
+        toolbar: [
+            ['font', ['bold', 'italic', 'underline']],
+            ['insert', ['advLink', 'mediaLib']],
+            ['view', ['toggleFullScreen']]
+        ],
+        cleaner: {
+            action: 'paste',
+            keepHtml: true,
+            keepTagContents: ['abbr', 'acronym', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'beaconregion', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'content', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'head', 'header', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hgroup', 'hr', 'html', 'i', 'iframe', 'image', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noembed', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'param', 'picture', 'plaintext', 'portal', 'pre', 'progress', 'q', 'rb', 'rp', 'rt', 'rtc', 'ruby', 's', 'samp', 'script', 'section', 'select', 'shadow', 'slot', 'small', 'source', 'spacer', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp', 'accesskey', 'autocapitalize', 'autofocus', 'class', 'contenteditable', 'contextmenu', 'data-*', 'dir', 'draggable', 'enterkeyhint', 'hidden', 'id', 'inputmode', 'is', 'itemid', 'itemprop', 'itemref', 'itemscope', 'itemtype', 'lang', 'nonce', 'part', 'slot', 'spellcheck', 'style', 'tabindex', 'title', 'translate', 'x-ms-acceleratorkey', 'x-ms-format-detection', 'input'], //Remove tags and keep the contents
+            badTags: ['applet', 'col', 'colgroup', 'embed', 'noframes', 'iframe', 'noscript', 'script', 'style', 'head'],
+            badAttributes: ['bgcolor', 'border', 'cellpadding', 'cellspacing', 'height', 'lang', 'id', 'onclick', 'onload', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'start', 'style', 'class', 'valign', 'width'], /*Remove attributes from remaining tags*/
+            limitChars: 0, // 0|# 0 disables option
+            limitDisplay: 'none', // none|text|html|both
+            limitStop: false, // true/false
+            notTimeOut: 850,
+            imagePlaceholder: ''
+        },
+        AdvancedDragAndDrop: {
+            enabled: true
+        }
+    },
+    initInPage: function (elem, pii, api) {
+
+        //Hide text area
+        $elem = $(elem);
+        $pii = $(pii);
+        $elem.hide();
+
+        api.getConfigModeFromPii(pii, api, $elem);
+    },
+    initInClassicForm: function ($textArea, api) {
+        /* There are three important ids/names:
+         * The containing div is InputID + "div"
+         * The html view (for display forms) is InputID + "view"
+         * The text area (defaults to hidden) is InputID
+         */
+        var inputID = '#' + $textArea.prop('id');
+        $inputContainerDIV = $textArea.closest(inputID + 'div');
+        var oOptions = $textArea.data('richtext-options');
+
+        $htmlView = $inputContainerDIV.find(inputID + 'view');
+        $htmlView.hide();
+        //Get editor config
+        var $form = $textArea.closest('form');
+        var sFormId = $form.attr('id');
+        var formWindow = sFormId + '_win';
+        var f_handle = findTop()[formWindow].fhandle;
+        api.getConfigModeFromSorceAppHandle(f_handle, api, $textArea, oOptions);
+    },
+    initEditor: function ($elem, api, overrideConfig) {
+        //Get editor config
+        var editorConfig;
+        if (overrideConfig == undefined) {
+            editorConfig = api.AllOptionsEditorConfig;
+        } else {
+            editorConfig = overrideConfig;
+        }
+        if (BEACON.Constants && BEACON.Constants.jugglMediaEnabled) {
+            var editorConfigString = JSON.stringify(editorConfig)        
+            editorConfig = JSON.parse(editorConfigString.replace('video', 'jugglMedia'))
+        };
+        //Set language
+        editorConfig.lang = $elem.data('richtext-lang');
+        $elem.summernote(editorConfig);
+    },
+    init: function (mode, target) {
+        var api = this;
+        switch (mode) {
+            case 'InPage':
+                //find the enabled textareas boxes
+                $pii = $(target);
+                $pii.find('textarea[data-richtext-enabled=true]').each(function () {
+                    var $textArea = $(this);
+                    //only init once to prevent multiple editors
+                    if ($textArea.siblings('.note-editor').length === 0 && $textArea.data('richtext-enabled-onclick') != true) {
+                            api.initInPage(this, $pii, api);
+                    }
+                });
+                break;
+            case 'InPageOnClick':
+                if (target.data('richtext-enabled') == true && target.siblings('.note-editor').length === 0) {
+                    api.initInPage(target, target.closest('.pi'), api);
+                }
+                break;
+            case 'ClassicForm':
+                //Custom path for classic forms (target = jquery object for text area)
+                if (target.data('richtext-enabled') == true) {
+                    api.initInClassicForm(target, api);
+                }
+                break;
+            default:
+                break;
+        }
+    },
+    initOnLoad: function () {
+        var api = this;
+        //Ensure labels are loaded for custom plugins
+        BEACON.GetLabelTextFromServer(api.labelHandles, function (LabelData) {
+            BEACON.Labels.AddLabelsToCache(LabelData);
+        });
+        //find all inpage contributions and add editor init
+        $('.pi .pageItemHeader a.inlineAdd').click(function () {
+            api.init.bind(api)('InPage', $(this).closest('.pi'));
+        });
+
+        //find all click in textareas
+        $('.pi textarea[data-richtext-enabled-onclick=true]').each(function () {
+            var $textArea = $(this);
+            //for text areas enabled with the editor and for onclick event
+            if ($textArea.data('richtext-enabled') == true && $textArea.data('richtext-enabled-onclick') == true && $textArea.data('richtext-init-added') != true) {
+                $textArea.data('richtext-init-added', true);
+                $textArea.on('focus', function (evt) {
+                    //prevent mentions from firing while inialising the editor
+                    evt.preventDefault(); evt.stopImmediatePropagation();
+                    api.init.bind(api)('InPageOnClick', $textArea);
+                });
+            }
+        });
+
+        //check on all content updates
+        $('.pi').each(function(){
+            var $pii = $(this);
+            var $PiiContent = $pii.find('div[id$=_content]');
+            $pii.on('BEACON:PII:allUpdate', function () {
+                //find all inpage contributions and add editor init
+                $PiiContent.find('.pageItemHeader a.inlineAdd').click(function () {
+                    api.init.bind(api)('InPage', $pii);
+                });
+
+                //find all click in textareas
+                $PiiContent.find('textarea[data-richtext-enabled-onclick=true]').each(function () {
+                    var $textArea = $(this);
+                    //for text areas enabled with the editor and for onclick event
+                    if ($textArea.data('richtext-enabled') == true && $textArea.data('richtext-enabled-onclick') == true && $textArea.data('richtext-init-added') != true) {
+                        $textArea.data('richtext-init-added', true);
+                        $textArea.on('focus', function (evt) {
+                            //prevent mentions from firing while inialising the editor
+                            evt.preventDefault(); evt.stopImmediatePropagation();
+                            api.init.bind(api)('InPageOnClick', $textArea);
+                        });
+                    }
+                });
+            });
+        });
+    },
+
+    configModeSelection: function (api, $elem, response) {
+        switch (parseInt(response.responseText)) {
+            case Config.BasicEditor:
+                //init Editor
+                return api.defaultEditorConfig;
+                break;
+            case Config.AdvEditorCodeOnly:
+                //init Editor
+                return api.CodeViewOnlyEditorConfig;
+                break;
+            case Config.AdvEditorPasteOnly:
+                //init Editor
+                return api.PasteOnlyEditorConfig;
+                break;
+            case Config.AdvEditorAllOptions:
+                //init Editor
+               return api.AllOptionsEditorConfig;
+                break;
+            case Config.AdvEditorComments:
+                //init Editor
+                return api.CommentsEditorConfig;
+                break;
+            default:
+                //init Editor
+                return api.defaultEditorConfig;
+                break;
+        }
+    },
+
+    getConfigModeFromSorceAppHandle: function (formHandle, api, $elem, oOptions) {
+
+        Config = {
+            BasicEditor: 0,
+            AdvEditorCodeOnly: 1,
+            AdvEditorPasteOnly: 2,
+            AdvEditorAllOptions: 3,
+            AdvEditorComments: 4
+        }
+        data = { sorceFormHandle: formHandle};
+
+        //Do the full save ASHX
+        ashxURL = "/sorce/beacon/PageItem/AppAspx/generic/getEditorConfigMode.ashx";
+        $.ajax({
+            url: ashxURL
+            , method: 'POST'
+            , dataType: "json"
+            , data: JSON.stringify(data)
+            , contentType: "application/json"
+            , complete: function (response) {
+                var config = api.configModeSelection(api, $elem, response);
+                api.formInitPostConfigSelection(config, api, $elem, oOptions);
+            }
+            , error: function (xhr, status, errorthrown) {
+                if (xhr.responseText) {
+
+                }
+            }
+        });
+
+    },
+
+    formInitPostConfigSelection: function(editorConfig, api, $textArea, oOptions) {
+        /*change config to use classic media library picker
+         * (5th array "insert" button group,
+         *  the 2nd item for the buttons in the gorup,
+         *  3rd button in the array)*/
+        //editorConfig.toolbar[4][1][2] = "classicMediaLib";
+        var toolbar = JSON.stringify(editorConfig.toolbar);
+        toolbar = toolbar.replace("mediaLib", "classicMediaLib");
+        editorConfig.toolbar = JSON.parse(toolbar);
+        editorConfig.minHeight = "";
+        api.initEditor($textArea, api, editorConfig);
+        //Force the editor to fill the space (this has to be done after editor init as the toolbar might spread over more than one line!)
+        $editor = $inputContainerDIV.find('.note-editor');
+        $editorToolbar = $editor.find('.note-toolbar');
+        $editorEditable = $editor.find('.note-editable');
+        $editorCodeView = $editor.find('.note-codable');
+        $editorStatus = $editor.find('.note-statusbar');
+        $editorStatus.data('ishiddenalways', true);
+        $editorStatus.hide();
+
+        //Get any padding or borders applied
+        var heightDiff = $inputContainerDIV.outerHeight() - $inputContainerDIV.height();
+        //Add any additional padding or borders applied
+        heightDiff += $editor.outerHeight() - $editor.height();
+        var strHeightCSS = "calc(" + oOptions.fixed_height + " - " + ($editorToolbar.outerHeight() + heightDiff) + "px);";
+        $editorEditable.attr("style", "height: " + strHeightCSS);
+        $editorCodeView.attr("style", "height: " + strHeightCSS);
+
+        //Add event to ensure the height is consistent when codeview is toggled
+        $textArea.on('summernote.codeview.toggled', function () {
+            $editorEditable.attr("style", "height: " + strHeightCSS);
+            $editorCodeView.attr("style", "height: " + strHeightCSS);
+        });
+
+        //apply mentions
+        var formWindow = $textArea.closest('form').attr('id') + '_win';
+        $editorEditable.addClass(api.mentionsHelperClass);
+        findTop()[formWindow].EngageMentions.AllQuery(undefined, oOptions.mentions_zpos);
+
+        //Ensure enter does not interfere with mentions
+        $textArea.on('summernote.enter', function (winevt, evt) {
+            if ($textArea.closest('body').find(api.mentionsDropdownSelector).is(':visible')) {
+                evt.preventDefault();
+            }
+        });
+
+        //Ensure mentions are picked up
+        $textArea.on('summernote.blur', function (we, contents, $editable) {
+            //fire on change event for mentions
+            $textArea.change();
+        });
+
+        //Fix for chrome inserting unwanted SPAN's
+        $editorEditable.on("DOMNodeInserted", function (e) {
+            if (e.target.tagName === "SPAN") {
+                $(e.target).replaceWith($(e.target).contents());
+            }
+        });
+
+        //Update mentions area to show whats already in content
+        $textArea.change();
+    },
+
+    getConfigModeFromPii: function ($pii, api, $elem) {
+
+        Config = {
+            BasicEditor: 0,
+            AdvEditorCodeOnly: 1,
+            AdvEditorPasteOnly: 2,
+            AdvEditorAllOptions: 3,
+            AdvEditorComments: 4
+        }
+        data = { pageItemInstanceId: $pii.prop('id') };
+
+        //Do the full save ASHX
+        ashxURL = "/sorce/beacon/PageItem/AppAspx/generic/getEditorConfigMode.ashx";
+        $.ajax({
+            url: ashxURL
+            , method: 'POST'
+            , dataType: "json"
+            , data: JSON.stringify(data)
+            , contentType: "application/json"
+            , complete: function (response) {
+                var config = api.configModeSelection(api, $elem, response);
+                api.initEditor($elem, api, config);
+                api.piiInitPostConfigSelection($pii, api, $elem);
+            }
+            , error: function (xhr, status, errorthrown) {
+                if (xhr.responseText) {
+
+                }
+            }
+        });
+
+    },
+    piiInitPostConfigSelection: function ($pii, api, $elem) {
+        //integrate mentions helper
+        $pii.find('.note-editor.note-frame .note-editable').addClass(api.mentionsHelperClass);
+        $pii.trigger('BEACON:PII:allUpdate');
+
+        //Ensure enter does not interfere with mentions
+        $elem.on('summernote.enter', function (winevt, evt) {
+            if ($(api.mentionsDropdownSelector).is(':visible')) {
+                evt.preventDefault();
+            }
+        });
+
+        //Resolve the height issue on code view toggle
+        $elem.on('summernote.codeview.toggled', function () {
+            if ($elem.summernote('codeview.isActivated')) {
+                $editor = $elem.parent().find('.note-editor');
+                $editorEditable = $editor.find('.note-editable');
+                $editorCodable = $editor.find('.note-codable');
+                $editorCodable.css('min-height', $editorEditable.outerHeight());
+            }
+        });
+    }
+}
+
+BEACON.lazyLoading = {
+
+    init: function () {
+        BEACON.lazyLoading.AttachObserversToAllImages();
+
+        $(document).on("BEACON:PII:allUpdate", function () {
+            BEACON.lazyLoading.AttachObserversToAllImages();
+        });
+    },
+
+    AttachObserversToAllImages: function () {
+        const images = Array.from(document.querySelectorAll('img.lazyLoad'));
+
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const image = entry.target;
+
+                        image.src = image.dataset.src;
+                        imageObserver.unobserve(image);
+                        $(image).removeClass("lazyLoad");
+                    }
+                });
+            });
+
+            images.forEach(img => imageObserver.observe(img));
+        }
+    }
+}

@@ -1,0 +1,37 @@
+// v1.1 CD/MJB 21-11-22
+// v1.2 MJB 21102022 - refactored, updates data-src if the image is still awaiting lazy loading.
+
+let stripSampImg = (function () {
+  //might be processing a relative URL, so need site protocol and address 
+  let baseURL = document.location.origin;
+
+  function doInit() {
+      //find unprocessed images and mark as processed.
+      let $imgSrc = $("img").not(".agdone");
+      $imgSrc.addClass("agdone");
+
+
+      $imgSrc.each(function () {
+
+          // does it have a lazy load component that's not been loaded? in that case we'll update the data-src rather than src
+          let updateSrc = ((this.classList.contains("lazyLoad") && ("src" in this.dataset)) ? false : true);
+          //read src based on what's being updated
+          let src = (updateSrc ? this.src.toLowerCase() : this.dataset.src.toLowerCase());
+
+          //not using sampleImg? not a gif? abort
+          if (src.indexOf('sampleimg.aspx') == -1 || src.indexOf('.gif') == -1) return;
+
+          // get the imagepath component of the call
+          let u = new URL(src, baseURL);
+          let newSrc = decodeURIComponent(u.searchParams.get("imagepath"));
+
+          //update current or the lazy-loaded image as required.
+          if (updateSrc) this.src = newSrc;
+          else
+              this.dataset.src = newSrc;
+      });
+  }
+  return { init: doInit };
+})();
+
+$(document).on("BEACON:PAGE:ready BEACON:PII:allUpdate", stripSampImg.init);

@@ -1,0 +1,58 @@
+@font-face {
+    font-family: 'ArrrowsRegular';
+    src: url('font/arrrows-regular-webfont.eot');
+    src: url('font/arrrows-regular-webfont.eot?#iefix') format('embedded-opentype'), url('font/arrrows-regular-webfont.woff') format('woff'), url('font/arrrows-regular-webfont.ttf') format('truetype'), url('font/arrrows-regular-webfont.svg#ArrrowsRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}/*bold version of arrows*/
+@font-face {
+    font-family: 'ArrrowsRegular';
+    src: url('font/arrrows-bold-webfont.eot');
+    src: url('font/arrrows-bold-webfont.eot?#iefix') format('embedded-opentype'), url('font/arrrows-bold-webfont.woff') format('woff'), url('font/arrrows-bold-webfont.ttf') format('truetype'), url('font/arrrows-bold-webfont.svg#ArrrowsRegular') format('svg');
+    font-weight: bold;
+    font-style: normal;
+}
+
+.arrrows {
+    position: relative;
+    line-height: 1rem;
+    font-style: normal;
+    font-weight: normal;
+}
+.arrrows:before {
+    font-family: 'ArrrowsRegular';
+    font-style: normal;
+    font-weight: normal;
+    font-size: 1rem;
+    -webkit-font-smoothing: antialiased;
+}
+/*arrow sizes*/
+.arrrows.small:before {
+    font-size: 1rem;
+}
+.arrrows.medium:before {
+    font-size: 1.5rem;
+}
+.arrrows.large:before {
+    font-size: 2rem;
+}
+.arrrows.xlarge:before {
+    font-size: 2.5rem;
+}
+.arrrows.xxlarge:before {
+    font-size: 3rem;
+}
+/*chevron like arrows*/
+.arrrows.chevRight:before {
+    content: "\0072";
+}
+.arrrows.chevLeft:before {
+    content: "\0052";
+}
+.arrrows.chevUp:before {
+    content: "\0055";
+}
+.arrrows.chevDown:before {
+    content: "\0075";
+}
+

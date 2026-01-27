@@ -1,0 +1,370 @@
+// Engage PDF Lightbox
+
+// MJB 20 Nov 2023 - v1 - Initial release of versioned code.
+// MJB 2 Feb 2024 - v1.1 - support for /DMD/ links, debugging.
+// MJB 27 Feb 2024 - v1.2 BETA - Move to document.click model of handling requests. Correct year in version 1.1 (!)
+// MJB 15 Mar 2024 - v1.3 - Fix test user check. Stricter check for PDF links to only include those hosted within /sorce/. Open links in new tab. Upgrade PDFJS to last v3 version. 
+// MJB 22 Mar 2024 - v1.4 - Don't preview if user selects "Download" from document menu
+// MJB 21 May 2024 - v1.5 Upgrade to use latest version of PDFJs.
+//                        Note this requires .MJS text/javascript MIME type to be added to IIS
+
+
+const PDF_LightBox = (function () {
+	// having problems? Add the user's ID to Debug Users and all actions will be logged to the console
+	const TestUsers = [],
+		doDebug = false,
+		// root folder of this master script
+		thisFile = new URL(document.currentScript.src),
+		ROOT_FOLDER = thisFile.pathname.replace(`/pdf_lightbox.js`, ``),
+		pdf_VisibilityHidden = ["#secondaryToolbarToggle", "#presentationMode span",],
+		pdf_AlwaysView = ["#presentationMode", "#print", "#download"],
+		pdf_Hidden = ['.verticalToolbarSeparator', '#openFile', "#editorModeButtons"],
+		pdf_moveToToolbar = pdf_AlwaysView, //same controls
+		pdf_toolbarButtonCSS = "toolbarButton",
+		pdf_Toolbars = ['#toolbarViewerLeft', '#toolbarViewerMiddle', '#toolbarViewerRight'],
+		DELAYED_FILE = `The file is taking longer than normal to download.</p><p>If it doesn''t load soon, please refresh the page and try again`,
+		//use the timestap of this file to update any required resources
+		dtStamp = thisFile.search.substring(1),
+		jsLightbox = `${ROOT_FOLDER}/featherlight/featherlight.min.js?v=${dtStamp}`,
+		featherLightCSS = `${ROOT_FOLDER}/featherlight/featherlight.min.css?v=${dtStamp}`,
+		lightboxCSS = `${ROOT_FOLDER}/pdf_lightbox.css?v=${dtStamp}`,
+		PERMS_URL = `${ROOT_FOLDER}/aspx/HasViewPermsOnDocument.aspx`,
+		PREVIEW_URL = `/sorce/Beacon/PageItem/AppAspx/DocPreview.aspx?sd_rev_id=`,
+		PDF_VIEWER = `${ROOT_FOLDER}/PdfJs/web/viewer.html?v=${dtStamp}&file=`,
+		TIMEOUT_MSG = `<p>The file is taking longer than normal to download.</p><p>If it doesn't load soon, please refresh the page and try again</p>`,
+		FL_OPEN_SPEED = 10,
+		FL_CLOSE_SPEED = 50,
+		// large documents can easily take this long to fully render
+		MAX_PDF_WAIT_SECONDS = 30 * 1000;
+
+
+	function isTestUser() {
+		if (TestUsers.length == 0) return true;
+		if (!BEACON || TestUsers.indexOf(BEACON.user_id) == -1) {
+			log('Not a test user. Aborting');
+			return false;
+		}
+		log('In test group');
+		return true;
+	}
+
+	function log(msg) {
+		if (!doDebug) return;
+		if (window.console) console.log("Lightbox:- ", msg);
+	}
+
+	function loadCSSFile(head, filePath) {
+		//CSS
+		log(`loading ${filePath}`);
+		let css = document.createElement("link");
+		css.rel = "stylesheet";
+		css.href = filePath;
+		css.type = "text/css";
+		head.appendChild(css);
+	}
+
+	function loadJSFile(head, filePath) {
+		log(`loading ${filePath}`);
+		let script = document.createElement("script");
+		script.src = filePath;
+		head.appendChild(script);
+	}
+
+	function bootStrapLightbox() {
+		if (!isTestUser()) return;
+		log("loading lightbox");
+		//Load resources required for lightbox to run
+		loadViewerResources();
+		initLightBox();
+	}
+
+	function loadViewerResources() {
+		const head = document.getElementsByTagName("head")[0];
+
+		loadCSSFile(head, featherLightCSS);
+		loadCSSFile(head, lightboxCSS);
+
+		//Lightbox
+		loadJSFile(head, jsLightbox);
+
+	}
+
+
+	function showNoPermsMessage(result) {
+		const w = `<span class='glyphicons alert PDF_-red rightMargin_medium glyphPad_small'></span>`;
+
+		switch (result) {
+			case "P":
+				notification(w + "You don't have permissions to view this document");
+				return;
+			case "E":
+				notification(
+					w + "The document has expired and can no longer be viewed"
+				);
+				return;
+			default:
+				notification(
+					w + `You're being denied access to this document (${result.substring(0, 10)})`
+				);
+				return;
+		}
+	}
+
+	function showPDFJS(pathToFile, prgWaiting) {
+		prgWaiting && clearTimeout(prgWaiting);
+		log(`showPDFJS: ${pathToFile}`);
+		//some cache busting to ensure 404 files are refetched
+		const
+			randomSeed = `?v=${getRandomInt(1000000)}`,
+			fileToView = encodeURIComponent(pathToFile + randomSeed),
+			html = `<iframe id="PDF_LightBox_Preview" class="PDF_LightBox_Preview" allowfullscreen style="max-width:100%" src="${PDF_VIEWER}${fileToView}#page=1"></iframe>`;
+
+
+
+		$.featherlight(html);
+
+		//configure PDF viewer once loaded
+		const iPDF = top.document.getElementById("PDF_LightBox_Preview");
+		iPDF.contentDocument.body.onload = configurePDFViewer;
+
+	}
+
+
+	function toggleControls(docBody, selector, status) {
+		docBody.querySelectorAll(selector).forEach((ctl) => {
+			ctl.style.display = status;
+		});
+	}
+
+	function configurePDFViewer() {
+		log('configuring PDF viewer');
+		const frm = top.document.querySelector("#PDF_LightBox_Preview");
+
+		const vDoc = frm.contentDocument;
+		const vWin = frm.contentWindow;
+
+
+		// vWin.PDFViewerApplicationOptions.set('disablePreferences', true);
+		// vWin.PDFViewerApplicationOptions.set("externalLinkTarget", 2); //blank
+
+
+
+		// add CSS to header
+		const head = vDoc.getElementsByTagName("head")[0];
+		loadCSSFile(head, lightboxCSS);
+
+		// find the viewer body
+		const pBody = vDoc.body,
+			toolbar = pBody.querySelector("#toolbarViewerRight"),
+			tbViewer = pBody.querySelector("#toolbarViewer");
+
+
+		// show progress indicator
+		let divLoad = vDoc.createElement('DIV');
+		divLoad.id = 'pdf_loading_message';
+		divLoad.innerText = 'Loading, please wait...';
+		tbViewer.prepend(divLoad);
+
+		//hide uwanted controls entirely
+		pdf_Hidden.forEach((c) => {
+			toggleControls(pBody, c, 'none');
+		});
+
+		// hide unwanted controls
+		pdf_VisibilityHidden.forEach((c) => {
+			pBody.querySelectorAll(c).forEach((ctl) => {
+				// retain sizing
+				ctl.style.visibility = "hidden";
+				// move them to the end of the toolbar so spacing is maintained
+			});
+		});
+		// show desired controls  
+		pdf_AlwaysView.forEach((c) => {
+			pBody.querySelectorAll(c).forEach((ctl) => {
+				ctl.className = pdf_toolbarButtonCSS;
+			});
+		});
+
+		// and make sure they're not hidden away
+		pdf_moveToToolbar.forEach((c) => {
+			const ctl = pBody.querySelector(c);
+			toolbar.append(ctl);
+		});
+
+		// move the hidden menu toolbar item to the end so spacing is maintained
+		const sMenu = toolbar.querySelector("#secondaryToolbarToggle");
+		const lastChild = toolbar.lastChild;
+
+		lastChild.after(sMenu);
+
+		top.document
+			.querySelector(".featherlight-close-icon.featherlight-close")
+			.setAttribute("title", "Close the preview (Esc key)");
+
+		waitForPDF(vWin, vDoc, 0);
+	}
+
+	function waitForPDF(pdfWindow, pdfDoc, attempts) {
+		const TMR_WAIT = 100,
+			attemptsPerSecond = 1000 / TMR_WAIT;
+		attempts++;
+		// as we're running a 100ms timeout below, the * 100 directly below is correct!
+		if (attempts * attemptsPerSecond > MAX_PDF_WAIT_SECONDS) {
+			console.log('Timed out waiting for PDF to load');
+			return;
+		}
+
+
+		if (
+			pdfWindow.PDFViewerApplication.pdfViewer &&
+			pdfWindow.PDFViewerApplication.pdfViewer._pages &&
+			pdfWindow.PDFViewerApplication.pdfViewer._pages.length > 0 &&
+			pdfWindow.PDFViewerApplication.pdfViewer._pages[0].renderingState == 3
+		) {
+			log('removing toolbar');
+			// remove progress message, show toolbars
+			pdfDoc.querySelector('#pdf_loading_message').remove();
+
+			//show toolbars
+			pdf_Toolbars.forEach((c) => {
+				toggleControls(pdfDoc, c, 'initial');
+			});
+
+
+			return;
+		}
+		setTimeout(function () {
+			waitForPDF(pdfWindow, pdfDoc, attempts);
+		}, TMR_WAIT);
+	}
+
+
+	function initLightBox() {
+		// handle document clicks
+		//TODO: Add keydown handler here as well for accessibility
+		document.addEventListener('click', function (evt) {
+			const elem = evt.target;
+			// this will either be the link 
+			if (isDocLink(elem)) {
+
+				evt.preventDefault();
+				startPDFViewing($(elem));
+			}
+			else {
+				//...or it will be a component of an A tag that might be
+				const pNode = elem.closest('a');
+				if (pNode && isDocLink(pNode)) {
+					evt.preventDefault();
+					startPDFViewing($(pNode));
+				}
+			}
+			$(document).on('BEACON:PII:allUpdate', hidePreviewLinks);
+		});
+
+		hidePreviewLinks();
+
+	}
+
+
+	function startPDFViewing($a) {
+		log('About to view' + $a.attr('href'));
+		const h = $a.attr('href').toLowerCase();
+		if (h.indexOf('/dmd/') != -1 || h.indexOf('/dmdr/') != -1)
+			viewSecuredDoc($a);
+		else
+			viewPDFDirectly($a);
+	}
+
+
+	function viewPDFDirectly($a) {
+		// should now be a direct link to a PDF. Sanity check
+		const h = $a.attr('href').toLowerCase();
+		log(`View direct:${h}`);
+		log(h.substring(h.length - 4));
+		if ((h.indexOf('/fileuploads/') == -1 && h.indexOf("/uploads/") == -1) || h.substring(h.length - 4) != '.pdf') return;
+		showPDFJS(h);
+	}
+
+	function viewSecuredDoc($a) {
+		//check if the user has permissions on the document
+		const uParts = $a.attr("href").split("/");
+		let idx = uParts.indexOf("dmdr");
+		let url, ltype = 'r';
+		if (idx == -1) {
+			idx = uParts.indexOf("dmd");
+			url = `${PERMS_URL}?sd_id=${uParts[idx + 1]}`;
+			ltype = 'd';
+		}
+		else
+			url = `${PERMS_URL}?sd_rev_id=${uParts[idx + 1]}`;
+		if (idx == -1) return;
+
+		//Using a doc manager link, check for permissions					
+
+		$.post(url, function (result) {
+			//permissions to view?
+			if (result == "OK" || result.substring(0, 3) == "ROK") {
+				let prgWaiting = setTimeout(function () {
+					informationalNotification(TIMEOUT_MSG);
+				}, 4000);
+
+
+				const pURL = `${PREVIEW_URL}${(ltype == 'r' ? uParts[idx + 1] : result.split("|")[1])}`;
+
+				//Get the path to the document
+				BEACON.xhrGet(
+					pURL,
+					function (thePath) {
+						clearTimeout(prgWaiting);
+						showPDFJS(thePath, prgWaiting);
+					}
+				);
+			} else {
+				//no permissions, result contains message to display
+				showNoPermsMessage(result);
+				return;
+			}
+		});
+	}
+
+
+	function hidePreviewLinks() {
+		// don't show the native "Preview" link in document menus
+		$("a")
+			.filter('[onclick^="docmanAPI.document.preview"]')
+			.each(function () {
+				this.style.display = 'none';
+			});
+	}
+
+	function isDocLink(elem) {
+		if (!elem.tagName || elem.tagName != 'A') return false;
+
+		// we now have only 'A' tags. They should be dmd or dmdr links
+		if (!elem.href) return false;
+		const h = elem.href.toLowerCase();
+
+		//don't preview if the user has clicked the download link an an overflow menu
+		const docMenu = elem.closest('.DocumentFlexMenu.dropdownParent');
+		if (docMenu != null) return false;
+
+
+		// must be a link in Engage, and end in PDF and contain /dmd/ or /dmdr/
+		return h.indexOf('/sorce/') != -1 && h.substring(h.length - 4) == '.pdf';
+	}
+
+
+
+	function getRandomInt(max) {
+		return Math.floor(Math.random() * max);
+	}
+
+	return {
+		bootStrap: bootStrapLightbox,
+	};
+
+
+
+})();
+//as soon as the page is ready, bootstrap the lightbox code
+$(document).on('BEACON:PAGE:ready', PDF_LightBox.bootStrap);

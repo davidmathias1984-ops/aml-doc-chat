@@ -1,0 +1,3611 @@
+/*BEACONPalette 7.59.80.8 */
+
+/*record client changes here for future happiness*/
+
+/* Connells replacements
+
+#102648  => #04456A
+*/
+body {
+    background-color: #E8E9EE;
+    color: #494E5B;
+}
+
+.iotd_icon:before {
+    background-color: #d81122;
+    color: #fff;
+}
+
+select {
+    border: 1px solid #aaa;
+    box-shadow: 0 1px 0 1px rgba(0, 0, 0, .04);
+    background-color: #fff;
+}
+
+select:disabled,
+select[aria-disabled=true] {
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22graytext%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'), linear-gradient(to bottom, #ffffff 0%, #e5e5e5 100%);
+}
+
+p,
+li {
+    color: #2F313A;
+}
+
+.PageContainer a,
+.notificationContent a h4 {
+    color: #4A84F3;
+}
+
+.actionIcon {
+    color: #4A84F3;
+}
+
+.pageItemHeader a {
+    color: #4A84F3;
+}
+
+h1 {
+    color: #494E5B;
+}
+
+h2 {
+    color: #CDCFD7;
+}
+
+h2.itemHeader {
+    color: #494E5B;
+}
+
+h3.itemHeader,
+h3.contentSubtitle {
+    color: #494E5B;
+}
+
+a.inlineAdd:after {
+    color: #AFB2BD !important;
+}
+
+a.inlineAdd:hover:after {
+    color: #838996 !important;
+    background-color: rgba(140, 146, 159, 0.15);
+}
+
+a.inlineSearch:after {
+    color: #AFB2BD !important;
+}
+
+a.inlineSearch:hover:after {
+    color: #838996 !important;
+    background-color: rgba(140, 146, 159, 0.15);
+}
+
+a.inlineThumbnails:after {
+    color: #AFB2BD !important;
+}
+
+a.inlineThumbnails:hover:after {
+    color: #838996 !important;
+    background-color: rgba(140, 146, 159, 0.15);
+}
+
+.selectedHeading,
+.note-modal .note-nav-tabs .note-nav-link.note-nav-link.active {
+    border-bottom: solid 3px #4A84F3;
+}
+
+.preferencesPopDown {
+    border: 1px solid #DADCE2;
+    background-color: #FFFFFF;
+    box-shadow: 1px 1px 2px 0px rgba(115, 131, 154, 0.25);
+}
+
+.preferencesPopDown:after {
+    border-bottom-color: #ffffff;
+}
+
+.preferencesPopDown:before {
+    border-bottom-color: #DADCE2;
+}
+
+article[PI_Type="Office365 Team"].content {
+    background-color: #4A84F3;
+    color: #FFF;
+}
+
+a[name=jugglNextButton],
+a[name=jugglPrevButton] {
+    background-color: #4A84F3;
+    color: #FFF;
+}
+
+article[PI_Type="Office365 Team"] .backgroundColourBlue {
+    background-color: #4A84F3;
+}
+
+article[PI_Type="Office365 Team"] > a.toggleWithHover {
+    color: #FFF;
+}
+
+article[PI_Type="Office365 Team"] .dropdown {
+    background-color: #FFF;
+}
+
+.teamInfo {
+    color: #4A84F3;
+}
+
+div.pi.singlePage .contentContainer .contentMain {
+    background-color: #fff;
+}
+
+div.pi.singlePage .contentContainer .contentMainMultiple article.content {
+    background-color: #fff;
+}
+
+article[pi_type='Booking Events Full Page View'] .pageItemHeading .floatRight h3.contentSubtitle.exportAttendee {
+    color: #4A84F3;
+}
+
+.thickBorder {
+    border: #E8E9EE 5px solid;
+}
+
+.actionButtonContainer {
+    background: #4A84F3;
+}
+
+.moreOrLess {
+    color: #AFB2BD;
+}
+
+.moreOrLess > a[title='More'] > span,
+.moreOrLess > a[title='Less'] > span {
+    color: #AFB2BD;
+}
+
+.moreOrLess > a:hover > span {
+    color: #838996;
+}
+
+.contentContainer {
+    background-color: #ffffff;
+    border: 1px solid #E8E9EE;
+}
+
+div.noResultsFoundDiv,
+div.searchInProgressMessage {
+    background-color: #F0F1F4;
+    color: #838996;
+}
+
+.mediaLibPopup > .popupContents > .imagePickerArea > div[id$="_content"] {
+    background-color: #E8E9EE;
+}
+
+div[PI_Type="MediaPicker"] .mediaLibCat {
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+    box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+    display: none
+}
+
+.contentDateBox {
+    color: #FFFFFF;
+    background-color: #8760BB;
+}
+
+div.pi.singlePage .relatedContent .contentContainer,
+div.pi.singlePage .metadataContainer .contentContainer {
+    background-color: #fff;
+}
+
+div.pi.singlePage .relatedContent article[pi_type="Suggestions nested for single page view"] .contentContainer {
+    background-color: #fff;
+}
+
+.contentAuthorDate {
+    color: #838996;
+}
+
+.contentContainerGrey {
+    background-color: #E8E9EE;
+}
+
+.pageHitPerent {
+    color: #838996;
+}
+
+.contentAuthorDateRight {
+    color: #838996;
+}
+
+.contentDate {
+    color: #838996;
+}
+
+.inlineInfo {
+    background-color: #F0F1F4;
+    color: #838996;
+}
+
+.InputRegion {
+    background-color: #ffffff;
+}
+
+.SummaryQuestionWhiteBackground > div[id$="content"] {
+    background-color: #ffffff;
+}
+
+.SummaryQuestionGreyBackground > div[id$="content"] {
+    background-color: #F0F1F4;
+}
+
+.pi .InputRegion input.InputBox,
+.pi .InputRegion textarea,
+.pi .InputRegion select {
+    background-color: #F0F1F4;
+    color: #494E5B;
+}
+
+.pi .InputRegion input.InputBox[type="file"] {
+    background-color: #FFF;
+}
+
+.pi .InputRegion input.InputBox::placeholder,
+.pi .InputRegion textarea::placeholder,
+.pi .InputRegion select::placeholder {
+    color: #838996;
+}
+
+div .InputBox {
+    background-color: #ffffff;
+}
+
+.listSelector {
+    background-color: #ffffff;
+}
+
+div .InputBoxInlineBlock {
+    border: 1px #DADCE2 solid;
+}
+
+div .InputBox[type="file"],
+.InputRegion .InputBoxWithButton[type="file"] {
+    border: 0.5px solid #E8E9EE;
+}
+
+.InputBoxWithButton {
+    background-color: #ffffff;
+}
+
+.TextareaWithButton {
+    background-color: #ffffff;
+}
+
+.Textarea {
+    background-color: #ffffff;
+}
+
+.InputBoxButton {
+    background-color: #4A84F3;
+    box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.25);
+    color: #FFFFFF;
+}
+
+.InputBoxButtonDisabled,
+.InputBoxButtonDisabled:hover {
+    background-color: #DADCE2;
+}
+
+.tabBorder {
+    border-right: 1px solid #DADCE2;
+    color: #838996;
+}
+
+.tabBorder.filteredBy > div {
+    background-color: #E8E9EE;
+}
+
+.tabBorder.active > div {
+    color: #FFFFFF;
+    background-color: #3B76A9;
+}
+
+.dropdown-menu.textcomplete-dropdown {
+    background-color: #fff;
+    border: 1px solid #DADCE2;
+    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+}
+
+.dropdown-menu.textcomplete-dropdown > li > a {
+    color: #494E5B;
+}
+
+.dropdown-menu.textcomplete-dropdown > .active > a,
+.dropdown-menu.textcomplete-dropdown > .active > a:hover,
+.dropdown-menu.textcomplete-dropdown > .active > a:focus {
+    color: #FFFFFF;
+    background-color: #3B76A9;
+}
+
+.dropdown-menu.textcomplete-dropdown .glyphicons.beaconStar.colourFavourite_1::before {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.50);
+}
+
+.dropdown-menu.textcomplete-dropdown .email {
+    color: #838996;
+}
+
+.dropdown-menu.textcomplete-dropdown .profile {
+    color: #838996;
+}
+
+.dropdown-menu.textcomplete-dropdown > .active .email {
+    color: #C5E2F9;
+}
+
+.dropdown-menu.textcomplete-dropdown > .active .profile {
+    color: #C5E2F9;
+}
+
+.qrBox {
+    background-color: #ffffff;
+    border: 1px #DADCE2 solid;
+}
+
+.InputBoxIconButton:before {
+    background-color: #54BE82;
+    color: #FFFFFF;
+}
+
+.InputBoxIconButton:not(.InputBoxIconButtonDisabled:before):hover:before {
+    background-color: #5695cc;
+}
+
+.InputBoxIconButtonDisabled:before,
+.InputBoxIconButtonDisabled:hover:before {
+    background-color: #DADCE2;
+}
+
+.InputBoxIconButtonGreen:before {
+    background-color: #00a651;
+}
+
+.soloButton {
+    background-color: #3b76a9;
+    color: #FFFFFF;
+}
+
+.InputBoxButtonGreen {
+    background-color: #54BE82;
+}
+
+.RedBackground {
+    background-color: #d81122;
+}
+
+.RedBackgroundImportant {
+    background-color: #d81122 !important;
+}
+
+.deleteRed {
+    color: #d81122;
+}
+
+.GreyBackground {
+    background-color: #DADCE2;
+}
+
+.pi.sitesearchheader a.InputBoxButton {
+    color: #fff;
+}
+
+.pi.sitesearchheader a.InputBoxButton .glyphicons.searchButton:before {
+    color: #fff;
+}
+
+.sitesearchIconContainer.documents {
+    background-color: #ffffff;
+}
+
+div[PI_Type='In-page site search'] .glyphicons.searchButton:before {
+    color: #FFFFFF;
+}
+
+.progressBar {
+    background-color: #4A84F3;
+}
+
+.progressBarOuter {
+    background-color: #E8E9EE;
+}
+
+.progressWrap .contentBody {
+    color: #fff;
+}
+
+.progressWrap.votesHidden .contentBody {
+    color: #838996;
+}
+
+.SpeachBubble {
+    background-color: #F0F1F4;
+}
+
+.SpeachBubble::after {
+    border-color: #F0F1F4 transparent;
+}
+
+.CR_Overview {
+    color: #AFB2BD;
+}
+
+.CR_Overview a {
+    color: #AFB2BD;
+}
+
+.CR_Overview a:hover {
+    color: #838996;
+}
+
+article[pi_type="Comments"] .actionIconsContainer {
+    color: #AFB2BD;
+}
+
+article[pi_type="Comments"] .beaconDelete {
+    color: #AFB2BD;
+}
+
+article[pi_type="Comments"] .beaconFlag {
+    color: #AFB2BD;
+}
+
+.ContactActions {
+    color: #3b76a9;
+}
+
+.commentsContainer .InputBoxContainer .InputBox {
+    background-color: #F0F1F4;
+    color: #494E5B;
+}
+
+article[pi_type="Comments"] .contentContainer,
+div.pi.singlePage article[pi_type="Comments"] .contentContainer {
+    border: 1px solid #E8E9EE;
+}
+
+.glyphicons.beaconLike.beaconLikeLiked:hover:before {
+    background-color: rgba(74, 132, 243, 0.2);
+}
+
+.iLiked {
+    color: #4A84F3;
+}
+
+.whosLikedTxt {
+    color: #838996;
+    border-bottom: #E8E9EE solid 1px;
+}
+
+.glyphicons.actionIcon.beaconLike.colourChecked_0:hover:before,
+.glyphicons.actionIcon.beaconAddMoreReactions.colourChecked_0:hover:before {
+    background-color: #f1f1f1;
+}
+
+.actionIcon.beaconComment:hover:before {
+    background-color: #f1f1f1;
+}
+
+article[PI_Type='Find A Contact'] .relatedContent,
+article[PI_Type='Find A Nested Contact'] .relatedContent,
+article[PI_Type='Find A Nested Contact'] .contentSide {
+    background-color: #E8E9EE;
+}
+
+.metadataContainer {
+    background-color: #E8E9EE;
+}
+
+.relatedContentDark {
+    background-color: #E8E9EE;
+}
+
+article[PI_Type="FullPageViewProperties"] .contentMain {
+    background-color: #FFF;
+}
+
+article[PI_Type="FullPageViewProperties"] h3.itemHeader {
+    color: #4a84f3;
+}
+
+article[PI_Type="DocumentsNested"] .actionMenuParentIcon,
+article[PI_Type="SharePointDocumentsNested"] .actionMenuParentIcon {
+    background-color: #FFF;
+}
+
+article[PI_Type="SharePointFolderSinglePageView"] {
+    background-color: #FFF;
+}
+
+.contentContainer.overHover:hover {
+    background-color: #f8f8fa;
+}
+
+.heroImage .contentTitle {
+    color: #fff;
+}
+
+article[PI_Type='Application Quicklinks'] {
+    background-color: #FFF;
+}
+
+article[pi_type="news new"] .br_icons::before {
+    color: #F24D7B;
+}
+
+.pi.eventsSumByDay .contentSummaryDateBox {
+    border-top: 2px solid #3b76a9;
+}
+
+div[PI_Type='Quicklinks'].pageItemHeader .pencil {
+    color: #afb2bd;
+}
+
+div[PI_Type='Quicklinks'].pageItemHeader .pencil:hover {
+    color: #838996;
+    background-color: #d3d5dc;
+}
+
+article[PI_Type="News with overlay Image"] .contentAuthorDate a,
+article[PI_Type="News with overlay Image"] .contentAuthorDate span,
+div.threeArticleTop article[PI_Type="Top three news with overlay Image"] .contentAuthorDate a,
+div.threeArticleTop article[PI_Type="Top three news with overlay Image"] .contentAuthorDate span {
+    color: #fff !important;
+}
+
+.formSummaryQuestionSectionTitle,
+.contactJobRole,
+.recognitionInfo {
+    color: #838996;
+}
+
+.contentContainerContacts {
+    background-color: #E8E9EE;
+}
+
+.contactJobRoleSPV {
+    color: #838996;
+}
+
+.contactMentionSPV {
+    color: #838996;
+}
+
+.contactMentionSPV2 {
+    color: #838996;
+}
+
+.contactPronoun {
+    color: #838996;
+}
+
+.contactActions a:before {
+    background-color: #4a8af3;
+    color: #ffffff;
+}
+
+.contactWelcomeDark .contentContainer {
+    background-color: #04456A;
+}
+
+.contactWelcomeDark h3 {
+    color: #FFFFFF;
+}
+
+.contactWelcomeDark a {
+    color: #FFFFFF;
+}
+
+.contactWelcomeDark .contactJobRole {
+    color: #FFFFFF;
+}
+
+.contactWelcomeDark .contentImage {
+    border: 3px solid #FFFFFF;
+}
+
+article[PI_Type="FolderFullPageView"] .SPVCurrentFolderHeader > .contentContainer {
+    border-bottom: 1px solid #DADCE2;
+}
+
+article[pi_type="FolderFullPageViewParentFolder"] {
+    border-bottom: 1px solid #DADCE2;
+}
+
+article[pi_type="FolderFullPageView"] .subFolder {
+    border-bottom: 1px solid #DADCE2;
+}
+
+article[PI_Type='SharePointDocumentsAndFolders'] {
+    background-color: #fff;
+}
+
+.FolderNestedParent div:first-child,
+.DocumentNestedParent div:first-child {
+    background-color: #fff;
+}
+
+div.pi.singlePage article[pi_type="FolderFullPageView"] > div.contentContainer {
+    background-color: #fff;
+}
+
+article[PI_Type='DocumentFolderWithDocuments'] article[pi_type='FoldersNested'] .contentContainer,
+article[PI_Type='DocumentFolderWithDocuments'] article[pi_type='DocumentsNested'] .contentContainer,
+article[PI_Type='SharePointDocumentsAndFolders'] article[pi_type='SharePointFoldersNested'] .contentContainer,
+article[PI_Type='SharePointDocumentsAndFolders'] article[pi_type='SharePointDocumentsNested'] .contentContainer,
+article[PI_Type='Mandatory Read Selection'] .contentContainer,
+div.pi.singlePage article[PI_Type='Mandatory Read Selection'] .contentContainer {
+    border-top: #DADCE2 solid 1px;
+}
+
+.dateTabContainer {
+    background-color: #F24D7B;
+    color: #fff;
+}
+
+.FAQFlexExpand {
+    background: #4A84F3;
+}
+
+.myTask .taskPercentCompleteIndicator {
+    color: #838996;
+}
+
+.myTask .content {
+    background-color: #fff;
+}
+
+.singlePage.myTask .listSelector {
+    background-color: #F0F1F4;
+}
+
+.myTask .actionIcon.unchecked,
+.myTask .actionIcon.check {
+    color: #838996;
+}
+
+article[PI_Type="My task"] .contentAuthorDate {
+    color: #838996;
+}
+
+article[PI_Type="My task"] .advancedToggle {
+    background: #4A84F3;
+}
+
+.advancedReqIndicator:before {
+    color: #838996;
+}
+
+article[PI_Type="My task"].taskOutstanding .contentTitle,
+.myTask .taskOutstandingToggle {
+    color: #2F313A !important;
+}
+
+article[PI_Type="My task"].taskOverdue .contentTitle,
+.myTask .taskOverdueToggle {
+    color: #d81122 !important;
+}
+
+article[PI_Type="My task"].taskNew .contentTitle,
+.myTask .taskNewToggle {
+    color: #00a651 !important;
+}
+
+article[PI_Type="My task"].taskComplete .contentTitle,
+.myTask .taskCompleteToggle {
+    color: #838996 !important;
+}
+
+article[PI_Type="My task"].taskDraft .contentTitle,
+.myTask .taskDraftToggle {
+    color: #f6a638 !important;
+}
+
+article[name="bTaskSPV"] textarea.InputBox {
+    background-color: #fff;
+}
+
+article[name="bTaskSPV"] textarea.InputBoxEdit {
+    background-color: #F0F1F4;
+}
+
+article[name="bTaskSPV"] input.InputBox {
+    background-color: #F0F1F4;
+}
+
+.TaskButton {
+    background-color: #4A84F3;
+    box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.25);
+    color: #FFFFFF;
+}
+
+[PI_Type="My Recognitions"] .contentContainer,
+[PI_Type="My Recognitions"] .contentAuthorDate,
+[PI_Type="My Recognitions"] .AuthorName {
+    color: #FFF;
+}
+
+[PI_Type="My Recognitions"] .contentContainerHidden {
+    background-color: #CDCFD7;
+}
+
+[PI_Type="My Recognitions"] .contentContainerVisible {
+    background-color: #FFB82C;
+}
+
+.glyphicons.certificate {
+    color: #FFB82C;
+}
+
+DIV.feeling_angry {
+    background-color: #ffffff;
+}
+
+DIV.feeling_sad {
+    background-color: #ffffff;
+}
+
+DIV.feeling_muh {
+    background-color: #ffffff;
+}
+
+DIV.feeling_happy {
+    background-color: #ffffff;
+}
+
+DIV.feeling_vhappy {
+    background-color: #ffffff;
+}
+
+.feeling_today {
+    color: #fff;
+}
+
+.colourRecognition_1 {
+    color: #00a651 !important;
+}
+
+.colourRecognition_0 {
+    color: #CDCFD7 !important;
+}
+
+.removeUser {
+    color: #4A84F3;
+}
+
+.titleOverlay {
+    background-image: linear-gradient(to top, black 0%, rgba(0, 0, 0, 0.738) 19%, rgba(0, 0, 0, 0.541) 34%, rgba(0, 0, 0, 0.382) 47%, rgba(0, 0, 0, 0.278) 56.5%, rgba(0, 0, 0, 0.194) 65%, rgba(0, 0, 0, 0.126) 73%, rgba(0, 0, 0, 0.075) 80.2%, rgba(0, 0, 0, 0.042) 86.1%, rgba(0, 0, 0, 0.021) 91%, rgba(0, 0, 0, 0.008) 95.2%, rgba(0, 0, 0, 0.002) 98.2%, transparent 100%);
+    color: #fff;
+}
+
+span.highlightText,
+span.docHighlight {
+    background-color: #FFB82C;
+}
+
+.fontColourGrey10,
+.fontColourGrey10_before:before {
+    color: #f8f8fa !important;
+}
+
+.fontColourGrey20,
+.fontColourGrey20_before:before {
+    color: #F0F1F4 !important;
+}
+
+.fontColourGrey30,
+.fontColourGrey30_before:before {
+    color: #E8E9EE !important;
+}
+
+.fontColourGrey40,
+.fontColourGrey40_before:before {
+    color: #DADCE2 !important;
+}
+
+.fontColourGrey50,
+.fontColourGrey50_before:before {
+    color: #CDCFD7 !important;
+}
+
+.fontColourGrey60,
+.fontColourGrey60_before:before {
+    color: #AFB2BD !important;
+}
+
+.fontColourGrey70,
+.fontColourGrey70_before:before {
+    color: #838996 !important;
+}
+
+.fontColourGrey80,
+.fontColourGrey80_before:before {
+    color: #494E5B !important;
+}
+
+.fontColourGrey90,
+.fontColourGrey90_before:before {
+    color: #2F313A !important;
+}
+
+.fontColourBlue,
+.fontColourBlue_before:before {
+    color: #4A84F3 !important;
+}
+
+.fontColourGreen,
+.fontColourGreen_before:before {
+    color: #00a651 !important;
+}
+
+.fontColourRed,
+.fontColourRed_before:before {
+    color: #d81122 !important;
+}
+
+.fontColourYellowOrange,
+.fontColourYellowOrange_before:before {
+    color: #f6a638 !important;
+}
+
+.fontColourWhite,
+a.fontColourWhite,
+.fontColourWhite_before:before {
+    color: #fff !important;
+}
+
+.backgroundColourGrey10 {
+    background-color: #f8f8fa !important;
+}
+
+.backgroundColourGrey20 {
+    background-color: #F0F1F4 !important;
+}
+
+.backgroundColourGrey30 {
+    background-color: #E8E9EE !important;
+}
+
+.backgroundColourGrey40 {
+    background-color: #DADCE2 !important;
+}
+
+.backgroundColourGrey50 {
+    background-color: #CDCFD7 !important;
+}
+
+.backgroundColourGrey60 {
+    background-color: #AFB2BD !important;
+}
+
+.backgroundColourGrey70 {
+    background-color: #838996 !important;
+}
+
+.backgroundColourGrey80 {
+    background-color: #494E5B !important;
+}
+
+.backgroundColourGrey90 {
+    background-color: #2F313A !important;
+}
+
+.backgroundColourBlue {
+    background-color: #3b76a9 !important;
+}
+
+.backgroundColourGreen {
+    background-color: #00a651 !important;
+}
+
+.backgroundColourRed {
+    background-color: #d81122 !important;
+}
+
+.backgroundColourYellowOrange {
+    background-color: #f6a638 !important;
+}
+
+.backgroundColourWhite {
+    background-color: #FFF !important;
+}
+
+.colourFavourite_1:before {
+    color: #FFB82C !important;
+}
+
+.colourFavourite_0:before {
+    color: #CDCFD7 !important;
+}
+
+.colourInfo {
+    color: #3b76a9 !important;
+}
+
+.colourInfo:before {
+    color: #3b76a9 !important;
+}
+
+.colourOk {
+    color: #00a651 !important;
+}
+
+.colourRemove,
+a.colourRemove {
+    color: #d81122 !important;
+}
+
+.colourCancelDelete,
+a.colourCancelDelete {
+    color: #d81122 !important;
+}
+
+.colourSubscribed_1:before {
+    color: #00a651 !important;
+}
+
+.colourSubscribed_0:before {
+    color: #CDCFD7 !important;
+}
+
+.colourChecked_1:before {
+    color: #3b76a9 !important;
+}
+
+.colourChecked_0:before {
+    color: #CDCFD7 !important;
+}
+
+.colourFolder:before {
+    color: #FFCC66 !important;
+}
+
+.colourFacebook:before {
+    color: #3e5d99 !important;
+}
+
+.colourTwitter:before {
+    color: #34abdf !important;
+}
+
+.colourLinkedIn:before {
+    color: #0e74b0 !important;
+}
+
+.colourAction {
+    color: #d81122 !important;
+}
+
+.colourAction:before {
+    color: #d81122 !important;
+}
+
+.colourInactive {
+    color: #CDCFD7 !important;
+}
+
+.colourInactive:before {
+    color: #CDCFD7 !important;
+}
+
+.colourWarn {
+    color: #E23C54 !important;
+}
+
+.colourWarn:before {
+    color: #E23C54 !important;
+}
+
+.backgroundHelper {
+    background-color: #f3e9d4;
+}
+
+.backgroundHoverLight:hover {
+    background-color: #ecf5fd;
+}
+
+.backgroundWhite {
+    background-color: #ffffff !important;
+}
+
+.withSeparator {
+    border-bottom: #DADCE2 solid 1px !important;
+}
+
+.withTopSeparator {
+    border-top: #DADCE2 solid 1px;
+}
+
+.banner {
+    background-color: #ffffff;
+    color: #838996;
+}
+
+.menu-hamburger a > span::before {
+    color: #252433;
+}
+
+#popoutmenucontainer ul > .Nav_LI {
+    border-bottom: 1px solid #EAECF1;
+}
+
+#popoutmenucontainer .Nav_LI.PopOutSelectedFill {
+    background-color: #F0F1F4;
+}
+
+#popoutmenucontainer .Nav_LI a {
+    color: #2F313A;
+}
+
+#popoutmenucontainer .Nav_LI a:hover {
+    background-color: #F0F1F4;
+}
+
+#popoutmenucontainer .Nav_SubUL {
+    background-color: #F0F1F4;
+}
+
+.DesktopPrimaryNav > .PrimaryNav > ul > .Nav_LI:hover {
+    border-top: solid 3px #4A84F3;
+    background-color: #F0F1F4;
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_LI a {
+    color: #2F313A;
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_SubUL > .PopOutUpArrow {
+    box-shadow: -2px -2px 3px -2px rgba(0, 0, 0, 0.1);
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_SubUL > .Nav_LI {
+    box-shadow: 0px -2px 0px 0px rgba(255, 255, 255, 1), 1px 1px 3px 0px rgba(0, 0, 0, 0.1);
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_SubUL > .Nav_LI:first-of-type {
+    box-shadow: 1px 1px 3px 0px rgba(0, 0, 0, 0.1);
+}
+
+.DesktopPrimaryNav > .PrimaryNav .Nav_SubUL > .Nav_LI:last-of-type {
+    box-shadow: 0px -2px 0px 0px rgba(255, 255, 255, 1), 1px 1px 3px 0px rgba(0, 0, 0, 0.1);
+}
+
+.SecondaryNavColour {
+    background-color: #04456A;
+}
+
+.sideMenu > .SecondaryNav .Nav_TopUL > .Nav_LI:hover,
+.sideMenu > .SecondaryNav .Nav_TopUL > .Nav_LI:hover > div > .Nav_A .Nav_Span {
+    background-color: #0C1C36;
+    color: #FFFFFF;
+}
+
+.sideMenu > .SecondaryNav .Nav_LI a {
+    color: #FFFFFF;
+}
+
+.sideMenu > .SecondaryNav .Nav_SubUL > .Nav_LI {
+    background-color: #0C1C36;
+}
+
+.sideMenu > .SecondaryNav .Nav_SubUL::before {
+    border-right: 10px solid #0C1C36;
+}
+
+.SecondaryNav.topMenu .Nav_LI:hover {
+    background-color: #0C1C36;
+}
+
+.SecondaryNav.topMenu .Nav_Span {
+    color: #FFFFFF;
+}
+
+.SecondaryNav.topMenu .Nav_SubUL > .Nav_LI {
+    background-color: #0C1C36;
+}
+
+.PopOutUpArrow {
+    border-top: 10px solid #0C1C36;
+    border-left: 10px solid #0C1C36;
+}
+
+.SecondaryNav.topMenu .FirstMenuGradient {
+    background-image: linear-gradient(to left, transparent, #04456A);
+}
+
+.SecondaryNav.topMenu .SecondMenuGradient {
+    background-image: linear-gradient(to right, transparent, #04456A);
+}
+
+.InPageNav .Nav_LI.PopOutSelectedFill .Nav_SubUL {
+    background-color: #F0F1F4;
+}
+
+.InPageNav .Nav_ItemWrapper.lihover > .Nav_SubUL {
+    background-color: #F0F1F4;
+}
+
+.InPageNav .Nav_LI .Nav_A {
+    color: #2F313A;
+}
+
+.InPageNav .Nav_LI.PopOutSelectedFill {
+    background-color: #F0F1F4;
+}
+
+.InPageNav ul > .Nav_LI {
+    border-bottom: 1px solid #EAECF1;
+}
+
+a.transitionRightOuter,
+a.transitionLeftOuter {
+    background-color: #4a84f3;
+    box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.25);
+}
+
+a.transitionRightOuter:hover,
+a.transitionLeftOuter:hover {
+    background-color: #3968BF;
+}
+
+span.transitionLeft.glyphicons.transLeft:before {
+    color: #fff;
+}
+
+span.transitionRight.glyphicons.transRight:before {
+    color: #fff;
+}
+
+div.transitionFooter a.pauseButton {
+    background-color: #4a84f3;
+    color: #fff;
+    box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.25);
+}
+
+.glyphicons.transLeft:before {
+    color: #4A84F3;
+}
+
+.glyphicons.transRight:before {
+    color: #4A84F3;
+}
+
+.contentDivide {
+    border-bottom: #DADCE2 solid 1px;
+}
+
+.contactImage {
+    border: #f8f8fa solid 5px;
+}
+
+.contextHolder > .iconContainer {
+    border: 0.1em solid #f8f8fa;
+}
+
+div.pi.pi_alt {
+    background-color: #f8f8fa;
+}
+
+div.pi.pi_alt .itemHeader {
+    color: #C40879;
+}
+
+div.pi.pi_alt .contentTitle {
+    color: #C40879;
+}
+
+.glyphicons.ShowDocActions:before {
+    color: #3b76a9;
+}
+
+.docButton {
+    color: #3b76a9;
+}
+
+.glyphicons.folder_closed:before {
+    color: #fff177;
+}
+
+.glyphicons.doc_subscribe_0:before {
+    color: #CDCFD7;
+}
+
+.glyphicons.parentFolder:before {
+    color: #CDCFD7;
+}
+
+.promoTitle {
+    background-color: #c5e2f9;
+    color: #494E5B;
+}
+
+.voteButton {
+    color: #3b76a9;
+    background-color: #ffffff;
+}
+
+#progressWrap {
+    background: #DADCE2;
+}
+
+#progressWrap #progressBar {
+    background-color: #3b76a9;
+}
+
+#progressWrap #progressNum {
+    color: #3b76a9;
+}
+
+.glyphicons.glossary:before {
+    color: #F24D7B;
+}
+
+.page_header_text {
+    background-color: #3b76a9;
+}
+
+.mediaLibDetailsLabel span {
+    color: #3b76a9;
+}
+
+.glyphicons.mediaLibDetailsLabel::before {
+    color: #3b76a9;
+}
+
+article[pi_type="Microblogs"] .actionIcon.beaconDelete,
+article[pi_type="My Recognitions"] .actionIcon.beaconDelete {
+    color: #AFB2BD;
+}
+
+.glyphicons.uploadPhoto:before {
+    color: #DADCE2;
+}
+
+.contentMicroBlog div {
+    background-color: #DADCE2;
+    color: #838996;
+}
+
+.contentMicroBlog div::after {
+    border-color: #DADCE2 transparent;
+}
+
+.microblogMenuParentIcon {
+    color: #CDCFD7;
+}
+
+.microblogMenuParentIcon:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #838996;
+}
+
+.editMicroblog.Textarea {
+    background-color: #F0F1F4;
+    color: #494E5B;
+}
+
+form.InputRegionMicroblogs [role='toolbar'].note-toolbar,
+div.createMicroblog form.InputRegionMicroblogs [role='status'].note-statusbar {
+    background-color: #fff;
+}
+
+form.InputRegionMicroblogs.editMicroblogs [role='toolbar'].note-toolbar {
+    background-color: #F0F1F4;
+}
+
+article[PI_Type='Google search launcher'] .InputBoxButton {
+    color: #fff;
+}
+
+article[PI_Type='Google search launcher'] .glyphicons.searchButton:before {
+    color: #FFF;
+}
+
+.glyphicons.searchButton:before {
+    color: #CDCFD7;
+}
+
+.GoogleTitle span:nth-of-type(1) {
+    color: #4285f4;
+}
+
+.GoogleTitle span:nth-of-type(2) {
+    color: #db4437;
+}
+
+.GoogleTitle span:nth-of-type(3) {
+    color: #f4b400;
+}
+
+.GoogleTitle span:nth-of-type(4) {
+    color: #4285f4;
+}
+
+.GoogleTitle span:nth-of-type(5) {
+    color: #0f9d58;
+}
+
+.GoogleTitle span:nth-of-type(6) {
+    color: #db4437;
+}
+
+.articleMenuParentIcon {
+    color: #CDCFD7;
+}
+
+article[pi_type="Announcements Site Search"] .glyphicons.megaphone {
+    color: #F24D7B;
+}
+
+.announcementsEmphasis .contentContainer {
+    background-color: #F24D7B;
+}
+
+.announcementsEmphasis .contentBody {
+    color: #ffffff;
+}
+
+.inlineInfoClassifieds {
+    color: #838996;
+}
+
+article[pi_type="Blogs Most Active"] > .contentContainer > .contentDate {
+    background-color: #F0F1F4;
+}
+
+.glyphicons.markasread:before {
+    color: #CDCFD7;
+}
+
+.glyphicons.deleteAlert:before {
+    color: #CDCFD7;
+}
+
+.glyphicons.jobApply_0:before {
+    color: #CDCFD7;
+}
+
+.glyphicons.jobApply_1:before {
+    color: #00a651;
+}
+
+.agendaMHead {
+    color: #494E5B;
+    background-color: #E8E9EE;
+    border-top: 1px solid #E8E9EE;
+    border-right: 0.5px solid #E8E9EE;
+    border-left: 0.5px solid #E8E9EE;
+    border-bottom: 1px solid #E8E9EE;
+}
+
+article[PI_Type="Bookable Event Calendar"] .agendaMPeriodContainer:not(:last-child),
+article[PI_Type="Event Calendar"] .agendaMPeriodContainer:not(:last-child) {
+    border-right: 0.5px solid #E8E9EE;
+    border-left: 0.5px solid #E8E9EE;
+    border-bottom: 1px solid #E8E9EE;
+}
+
+article[PI_Type="O365Calendar"] .agendaMHead {
+    background-color: #FFF;
+}
+
+article[PI_Type="O365Calendar"] .agendaDaysEventsContainer {
+    background-color: #FFF;
+}
+
+article[PI_Type="O365Calendar"] .agendaMContent {
+    border-right: 0.5px solid #E8E9EE;
+    border-left: 0.5px solid #E8E9EE;
+    border-bottom: 1px solid #E8E9EE;
+}
+
+.bCalendarDayTimeCol {
+    border-left: 1px solid #DADCE2;
+    border-right: 1px solid #DADCE2;
+    border-left: 1px solid #DADCE2;
+}
+
+.bCalendarDColDayBox {
+    border-right: 1px solid #DADCE2;
+}
+
+.bCalendarWDayTimeCol {
+    border-left: 1px solid #DADCE2;
+    border-right: 1px solid #DADCE2;
+    border-left: 1px solid #DADCE2;
+}
+
+.bCalendarWColDayBox {
+    border-right: 0.5px solid #DADCE2;
+}
+
+.bCalendarWLastColDayBox {
+    border-top: 1px solid #DADCE2;
+    border-right: 1px solid #DADCE2;
+}
+
+.bCalendarWRowDayBox {
+    border-bottom: 0.5px solid #DADCE2;
+}
+
+.bCalendarWLastRowDayBox {
+    border-bottom: 1px solid #DADCE2;
+}
+
+.bCalendarPeriodTime {
+    color: #494E5B;
+}
+
+.eventSelector {
+    border-color: #DADCE2;
+}
+
+.bCalendarHead {
+    color: #494E5B;
+    background-color: #E8E9EE;
+    border-top: 1px solid #E8E9EE;
+    border-bottom: 1px solid #E8E9EE;
+}
+
+.bMiniCalendarHead {
+    color: #494E5B;
+    background-color: #E8E9EE;
+    border-top: 1px solid #E8E9EE;
+    border-bottom: 1px solid #E8E9EE;
+}
+
+.bCalendarDaynum {
+    color: #494E5B;
+}
+
+.bCalendarMFirstRowDayBox {
+    border-bottom: 1px solid #E8E9EE;
+}
+
+.bCalendarMRowDayBox {
+    border-bottom: 1px solid #E8E9EE;
+}
+
+.bCalendarMLastRowDayBox {
+    border-bottom: 1px solid #E8E9EE;
+}
+
+.bCalendarMFirstColDayBox {
+    border-left: 1px solid #E8E9EE;
+    border-right: 1px solid #E8E9EE;
+}
+
+.bCalendarMColDayBox {
+    border-right: 1px solid #E8E9EE;
+}
+
+.bCalendarMLastColDayBox {
+    border-right: 1px solid #E8E9EE;
+}
+
+.calendarWeekEventTop:after {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1) 50%);
+}
+
+.calendarEventSelectororange {
+    color: #664200 !important;
+}
+
+.calendarEventSelectoraliceblue {
+    color: #33a0ff;
+}
+
+.calendarEventSelectorantiquewhite {
+    color: #e38d1c;
+}
+
+.calendarEventSelectoraqua {
+    color: #008080;
+}
+
+.calendarEventSelectoraquamarine {
+    color: #009966;
+}
+
+.calendarEventSelectorazure {
+    color: #00cccc;
+}
+
+.calendarEventSelectorbeige {
+    color: #9f9f2d;
+}
+
+.calendarEventSelectorbisque {
+    color: #ff8c00;
+}
+
+.calendarEventSelectorblack {
+    color: #E8E9EE;
+}
+
+.calendarEventSelectorblanchedalmond {
+    color: #e68a00;
+}
+
+.calendarEventSelectorblue {
+    color: #e6e6ff;
+}
+
+.calendarEventSelectorblueviolet {
+    color: #f3e9fc;
+}
+
+.calendarEventSelectorbrown {
+    color: #f5d6d6;
+}
+
+.calendarEventSelectorburlywood {
+    color: #8c6026;
+}
+
+.calendarEventSelectorcadetblue {
+    color: #eff5f5;
+}
+
+.calendarEventSelectorchartreuse {
+    color: #336600;
+}
+
+.calendarEventSelectorchocolate {
+    color: #160b03;
+}
+
+.calendarEventSelectorcoral {
+    color: #992900;
+}
+
+.calendarEventSelectorcornflowerblue {
+    color: #e8effc;
+}
+
+.calendarEventSelectorcornsilk {
+    color: #997a00;
+}
+
+.calendarEventSelectorcrimson {
+    color: #170206;
+}
+
+.calendarEventSelectorcyan {
+    color: #003333;
+}
+
+.calendarEventSelectordarkblue {
+    color: #ccccff;
+}
+
+.calendarEventSelectordarkcyan {
+    color: #e6ffff;
+}
+
+.calendarEventSelectordarkgoldenrod {
+    color: #181201;
+}
+
+.calendarEventSelectorgoldenrod {
+    color: #181201;
+}
+
+.calendarEventSelectordarkgray {
+    color: #1a1a1a;
+}
+
+.calendarEventSelectordarkgreen {
+    color: #e8efdc;
+}
+
+.calendarEventSelectordarkkhaki {
+    color: #585528;
+}
+
+.calendarEventSelectordarkmagenta {
+    color: #ffe6ff;
+}
+
+.calendarEventSelectordarkolivegreen {
+    color: #FFF;
+}
+
+.calendarEventSelectordarkorange {
+    color: #804600;
+}
+
+.calendarEventSelectordarkorchid {
+    color: #f5eafa;
+}
+
+.calendarEventSelectordarkred {
+    color: #ffe6e6;
+}
+
+.calendarEventSelectordarksalmon {
+    color: #843115;
+}
+
+.calendarEventSelectordarkseagreen {
+    color: #396039;
+}
+
+.calendarEventSelectordarkslateblue {
+    color: #efecef;
+}
+
+.calendarEventSelectordarkslategray {
+    color: #dfecec;
+}
+
+.calendarEventSelectordarkturquoise {
+    color: #006466;
+}
+
+.calendarEventSelectordarkviolet {
+    color: #f7e6ff;
+}
+
+.calendarEventSelectordeeppink {
+    color: #4d0029;
+}
+
+.calendarEventSelectordeepskyblue {
+    color: #007080;
+}
+
+.calendarEventSelectordimgray {
+    color: #f2f2f2;
+}
+
+.calendarEventSelectordodgerblue {
+    color: #e6f2ff;
+}
+
+.calendarEventSelectorfirebrick {
+    color: #fbeaea;
+}
+
+.calendarEventSelectorfloralwhite {
+    color: #cc8800;
+}
+
+.calendarEventSelectorforestgreen {
+    color: #eafaea;
+}
+
+.calendarEventSelectorfuchsia {
+    color: #660066;
+}
+
+.calendarEventSelectorgainsboro {
+    color: #737373;
+}
+
+.calendarEventSelectorghostwhite {
+    color: #8080ff;
+}
+
+.calendarEventSelectorgold {
+    color: #998200;
+}
+
+.calendarEventSelectorgray {
+    color: #f2f2f2;
+}
+
+.calendarEventSelectorgreen {
+    color: #e6ffe6;
+}
+
+.calendarEventSelectorgreenyellow {
+    color: #4d8000;
+}
+
+.calendarEventSelectorhoneydew {
+    color: #00b300;
+}
+
+.calendarEventSelectorhotpink {
+    color: #99004d;
+}
+
+.calendarEventSelectorindianred {
+    color: #270c0c;
+}
+
+.calendarEventSelectorindigo {
+    color: #f4e6ff;
+}
+
+.calendarEventSelectorivory {
+    color: #808000;
+}
+
+.calendarEventSelectorkhaki {
+    color: #9e9015;
+}
+
+.calendarEventSelectorlavender {
+    color: #9595ea;
+}
+
+.calendarEventSelectorlavenderblush {
+    color: #ff99bb;
+}
+
+.calendarEventSelectorlawngreen {
+    border-color: #66cc00 !important;
+    color: #4d9900;
+}
+
+.calendarEventSelectorlemonchiffon {
+    color: #b3a100;
+}
+
+.calendarEventSelectorlightblue {
+    color: #3691b0;
+}
+
+.calendarEventSelectorlightcoral {
+    color: #b71515;
+}
+
+.calendarEventSelectorlightcyan {
+    color: #00cccc;
+}
+
+.calendarEventSelectorlightgoldenrodyellow {
+    color: #a1a112;
+}
+
+.calendarEventSelectorlightgreen {
+    color: #189a18;
+}
+
+.calendarEventSelectorlightgrey {
+    color: #737373;
+}
+
+.calendarEventSelectorlightpink {
+    color: #e60022;
+}
+
+.calendarEventSelectorlightsalmon {
+    color: #cc3a00;
+}
+
+.calendarEventSelectorlightseagreen {
+    color: #0f5753;
+}
+
+.calendarEventSelectorlightskyblue {
+    color: #087cc4;
+}
+
+.calendarEventSelectorlightslategray {
+    color: #f0f2f4;
+}
+
+.calendarEventSelectorlightsteelblue {
+    color: #4b79b4;
+}
+
+.calendarEventSelectorlightyellow {
+    color: #999900;
+}
+
+.calendarEventSelectorlime {
+    color: #009900;
+}
+
+.calendarEventSelectorlimegreen {
+    color: #196719;
+}
+
+.calendarEventSelectorlinen {
+    color: #d98c3f;
+}
+
+.calendarEventSelectormagenta {
+    color: #660066;
+}
+
+.calendarEventSelectormaroon {
+    color: #ffe6e6;
+}
+
+.calendarEventSelectormediumaquamarine {
+    color: #25745a;
+}
+
+.calendarEventSelectormediumblue {
+    color: #e6e6ff;
+}
+
+.calendarEventSelectormediumorchid {
+    color: #230a29;
+}
+
+.calendarEventSelectormediumpurple {
+    color: #f0ebfa;
+}
+
+.calendarEventSelectormediumseagreen {
+    color: #20604d;
+}
+
+.calendarEventSelectormediumslateblue {
+    color: #ebe8fc;
+}
+
+.calendarEventSelectormediumspringgreen {
+    color: #00804f;
+}
+
+.calendarEventSelectormediumturquoise {
+    color: #196663;
+}
+
+.calendarEventSelectormediumvioletred {
+    color: #2e051f;
+}
+
+.calendarEventSelectormidnightblue {
+    color: #eaeafa;
+}
+
+.calendarEventSelectormintcream {
+    color: #00cc66;
+}
+
+.calendarEventSelectormistyrose {
+    color: #ff7566;
+}
+
+.calendarEventSelectormoccasin {
+    color: #e69100;
+}
+
+.calendarEventSelectornavajowhite {
+    color: #e68a00;
+}
+
+.calendarEventSelectornavy {
+    color: #e6e6ff;
+}
+
+.calendarEventSelectoroldlace {
+    color: #d49011;
+}
+
+.calendarEventSelectorolive {
+    color: #ffffe6;
+}
+
+.calendarEventSelectorolivedrab {
+    color: #f5faeb;
+}
+
+.calendarEventSelectororange {
+    color: #664200;
+}
+
+.calendarEventSelectororangered {
+    color: #4d1400;
+}
+
+.calendarEventSelectororchid {
+    color: #51154f;
+}
+
+.calendarEventSelectorpalegoldenrod {
+    color: #807719;
+}
+
+.calendarEventSelectorpalegreen {
+    color: #059405;
+}
+
+.calendarEventSelectorpaleturquoise {
+    color: #1f9393;
+}
+
+.calendarEventSelectorpalevioletred {
+    color: #661933;
+}
+
+.calendarEventSelectorpapayawhip {
+    color: #cc7e00;
+}
+
+.calendarEventSelectorpeachpuff {
+    color: #e66b00;
+}
+
+.calendarEventSelectorperu {
+    color: #3d2610;
+}
+
+.calendarEventSelectorpink {
+    color: #ff002b;
+}
+
+.calendarEventSelectorplum {
+    color: #832f83;
+}
+
+.calendarEventSelectorpowderblue {
+    color: #318f9b;
+}
+
+.calendarEventSelectorpurple {
+    color: #ffe6ff;
+}
+
+.calendarEventSelectorred {
+    color: #800000;
+}
+
+.calendarEventSelectorrosybrown {
+    color: #301d1d;
+}
+
+.calendarEventSelectorroyalblue {
+    color: #e9eefc;
+}
+
+.calendarEventSelectorsaddlebrown {
+    color: #fcf1e9;
+}
+
+.calendarEventSelectorsalmon {
+    color: #ac1706;
+}
+
+.calendarEventSelectorsandybrown {
+    color: #a7540c;
+}
+
+.calendarEventSelectorseagreen {
+    color: #ecf9f1;
+}
+
+.calendarEventSelectorseashell {
+    color: #ff8833;
+}
+
+.calendarEventSelectorsienna {
+    color: #f9f0eb;
+}
+
+.calendarEventSelectorsilver {
+    color: #666666;
+}
+
+.calendarEventSelectorskyblue {
+    color: #1e85ae;
+}
+
+.calendarEventSelectorslateblue {
+    color: #edebf9;
+}
+
+.calendarEventSelectorslategray {
+    color: #f1f2f4;
+}
+
+.calendarEventSelectorsnow {
+    color: #ff8080;
+}
+
+.calendarEventSelectorspringgreen {
+    color: #008040;
+}
+
+.calendarEventSelectorsteelblue {
+    color: #edf3f8;
+}
+
+.calendarEventSelectortan {
+    color: #815e32;
+}
+
+.calendarEventSelectorteal {
+    color: #e6ffff;
+}
+
+.calendarEventSelectorthistle {
+    color: #9e619e;
+}
+
+.calendarEventSelectortomato {
+    color: #991700;
+}
+
+.calendarEventSelectorturquoise {
+    color: #126e64;
+}
+
+.calendarEventSelectorviolet {
+    color: #b418b4;
+}
+
+.calendarEventSelectorwheat {
+    color: #b57e17;
+}
+
+.calendarEventSelectorwhite {
+    color: #a6a6a6;
+}
+
+.calendarEventSelectorwhitesmoke {
+    color: #8c8c8c;
+}
+
+.calendarEventSelectoryellow {
+    color: #999900;
+}
+
+.calendarEventSelectoryellowgreen {
+    color: #4d6719;
+}
+
+.calendarEventaliceblue {
+    border-color: #99cfff !important;
+    background-color: rgba(240, 248, 255, 0.65);
+    color: #33a0ff;
+}
+
+.calendarEventantiquewhite {
+    border-color: #f1c68e !important;
+    background-color: rgba(250, 235, 215, 0.65);
+    color: #e38d1c;
+}
+
+.calendarEventaqua {
+    border-color: #00cccc !important;
+    background-color: rgba(0, 255, 255, 0.55);
+    color: #008080;
+}
+
+.calendarEventaquamarine {
+    border-color: #00cc88 !important;
+    background-color: rgba(127, 255, 212, 0.70);
+    color: #009966;
+}
+
+.calendarEventazure {
+    border-color: #00cccc !important;
+    background-color: rgba(240, 255, 255, 0.75);
+    color: #00cccc;
+}
+
+.calendarEventbeige {
+    border-color: #d2d260 !important;
+    background-color: rgba(245, 245, 220, 0.70);
+    color: #9f9f2d;
+}
+
+.calendarEventbisque {
+    border-color: #ffba66 !important;
+    background-color: rgba(255, 228, 196, 0.65);
+    color: #ff8c00;
+}
+
+.calendarEventblack {
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #e6e6e6;
+}
+
+.calendarEventblanchedalmond {
+    border-color: #ffb84d !important;
+    background-color: rgba(255, 235, 205, 0.65);
+    color: #e68a00;
+}
+
+.calendarEventblue {
+    border-color: #0000b3 !important;
+    background-color: rgba(0, 0, 255, 0.75);
+    color: #e6e6ff;
+}
+
+.calendarEventblueviolet {
+    border-color: #6918b4 !important;
+    background-color: rgba(138, 43, 226, 0.85);
+    color: #f3e9fc;
+}
+
+.calendarEventbrown {
+    border-color: #7a1f1f !important;
+    background-color: rgba(165, 42, 42, 0.85);
+    color: #f5d6d6;
+}
+
+.calendarEventburlywood {
+    border-color: #c88937 !important;
+    background-color: rgba(222, 184, 135, 0.75);
+    color: #8c6026;
+}
+
+.calendarEventcadetblue {
+    border-color: #436e70 !important;
+    background-color: rgba(95, 158, 160, 0.80);
+    color: #eff5f5;
+}
+
+.calendarEventchartreuse {
+    border-color: #59b300 !important;
+    background-color: rgba(127, 255, 0, 0.65);
+    color: #336600;
+}
+
+.calendarEventchocolate {
+    border-color: #703810 !important;
+    background-color: rgba(210, 105, 30, 0.85);
+    color: #160b03;
+}
+
+.calendarEventcoral {
+    border-color: #e63d00 !important;
+    background-color: rgba(255, 127, 80, 0.80);
+    color: #992900;
+}
+
+.calendarEventcornflowerblue {
+    border-color: #3271e7 !important;
+    background-color: rgba(100, 149, 237, 0.80);
+    color: #e8effc;
+}
+
+.calendarEventcornsilk {
+    border-color: #ffcc00 !important;
+    background-color: rgba(255, 248, 220, 0.80);
+    color: #997a00;
+}
+
+.calendarEventcrimson {
+    border-color: #750b20 !important;
+    background-color: rgba(220, 20, 60, 0.80);
+    color: #170206;
+}
+
+.calendarEventcyan {
+    border-color: #009999 !important;
+    background-color: rgba(0, 255, 255, 0.60);
+    color: #003333;
+}
+
+.calendarEventdarkblue {
+    border-color: #000033 !important;
+    background-color: rgba(0, 0, 139, 0.80);
+    color: #e6e6ff;
+}
+
+.calendarEventdarkcyan {
+    border-color: #004d4d !important;
+    background-color: rgba(0, 139, 139, 0.80);
+    color: #e6ffff;
+}
+
+.calendarEventdarkgoldenrod {
+    border-color: #785807 !important;
+    background-color: rgba(184, 134, 11, 0.80);
+    color: #181201;
+}
+
+.calendarEventdarkgray {
+    border-color: #666666 !important;
+    background-color: rgba(169, 169, 169, 0.75);
+    color: #1a1a1a;
+}
+
+.calendarEventdarkgreen {
+    border-color: #003300 !important;
+    background-color: rgba(0, 100, 0, 0.80);
+    color: #e6ffe6;
+}
+
+.calendarEventdarkkhaki {
+    border-color: #8d883f !important;
+    background-color: rgba(189, 183, 107, 0.75);
+    color: #585528;
+}
+
+.calendarEventdarkmagenta {
+    border-color: #660066 !important;
+    background-color: rgba(139, 0, 139, 0.80);
+    color: #ffe6ff;
+}
+
+.calendarEventdarkolivegreen {
+    border-color: #38471f !important;
+    background-color: rgba(85, 107, 47, 0.75);
+    color: #e8efdc;
+}
+
+.calendarEventdarkorange {
+    border-color: #b36200 !important;
+    background-color: rgba(255, 140, 0, 0.75);
+    color: #804600;
+}
+
+.calendarEventdarkorchid {
+    border-color: #6b2390 !important;
+    background-color: rgba(153, 50, 204, 0.85);
+    color: #f5eafa;
+}
+
+.calendarEventdarkred {
+    border-color: #660000 !important;
+    background-color: rgba(139, 0, 0, 0.80) !important;
+    color: #ffe6e6;
+}
+
+.calendarEventdarksalmon {
+    border-color: #db5224 !important;
+    background-color: rgba(233, 150, 122, 0.75);
+    color: #843115;
+}
+
+.calendarEventdarkseagreen {
+    border-color: #568f56 !important;
+    background-color: rgba(143, 188, 143, 0.75);
+    color: #396039;
+}
+
+.calendarEventdarkslateblue {
+    border-color: #372f6a !important;
+    background-color: rgba(72, 61, 139, 0.90);
+    color: #efecef;
+}
+
+.calendarEventdarkslategray {
+    border-color: #1d3030 !important;
+    background-color: rgba(47, 79, 79, 0.85);
+    color: #dfecec;
+}
+
+.calendarEventdarkturquoise {
+    border-color: #009699 !important;
+    background-color: rgba(0, 209, 209, 0.75);
+    color: #006466;
+}
+
+.calendarEventdarkviolet {
+    border-color: #7d00b3 !important;
+    background-color: rgba(148, 0, 211, 0.80);
+    color: #f7e6ff;
+}
+
+.calendarEventdeeppink {
+    border-color: #b3005f !important;
+    background-color: rgba(255, 20, 147, 0.75);
+    color: #4d0029;
+}
+
+.calendarEventdeepskyblue {
+    border-color: #0086b3 !important;
+    background-color: rgba(0, 191, 255, 0.75);
+    color: #006080;
+}
+
+.calendarEventdimgray {
+    border-color: #595959 !important;
+    background-color: rgba(105, 105, 105, 0.85);
+    color: #f2f2f2;
+}
+
+.calendarEventdodgerblue {
+    border-color: #0073e6 !important;
+    background-color: rgba(30, 144, 255, 0.85);
+    color: #e6f2ff;
+}
+
+.calendarEventfirebrick {
+    border-color: #811818 !important;
+    background-color: rgba(178, 34, 34, 0.85);
+    color: #fbeaea;
+}
+
+.calendarEventfloralwhite {
+    border-color: #ffcc66 !important;
+    background-color: rgba(255, 250, 240, 0.75);
+    color: #cc8800;
+}
+
+.calendarEventforestgreen {
+    border-color: #145214 !important;
+    background-color: rgba(34, 139, 34, 0.80);
+    color: #eafaea;
+}
+
+.calendarEventfuchsia {
+    border-color: #cc0066 !important;
+    background-color: rgba(255, 0, 255, 0.65);
+    color: #660066;
+}
+
+.calendarEventgainsboro {
+    border-color: #b3b3b3 !important;
+    background-color: rgba(220, 220, 220, 0.65);
+    color: #737373;
+}
+
+.calendarEventghostwhite {
+    border-color: #ccccff !important;
+    background-color: rgba(248, 248, 255, 0.75);
+    color: #8080ff;
+}
+
+.calendarEventgold {
+    border-color: #ccad00 !important;
+    background-color: rgba(255, 215, 0, 0.65);
+    color: #998200;
+}
+
+.calendarEventgoldenrod {
+    border-color: #b1871b !important;
+    background-color: rgba(218, 165, 32, 0.75);
+    color: #6f5411;
+}
+
+.calendarEventgray {
+    border-color: #666666 !important;
+    background-color: rgba(128, 128, 128, 0.80);
+    color: #f2f2f2;
+}
+
+.calendarEventgreen {
+    border-color: #004d00 !important;
+    background-color: rgba(0, 128, 0, 0.80);
+    color: #e6ffe6;
+}
+
+.calendarEventgreenyellow {
+    border-color: #7acc00 !important;
+    background-color: rgba(173, 255, 47, 0.65);
+    color: #4d8000;
+}
+
+.calendarEventhoneydew {
+    border-color: #99ff99 !important;
+    background-color: rgba(240, 255, 240, 0.70);
+    color: #00b300;
+}
+
+.calendarEventhotpink {
+    border-color: #ff0080 !important;
+    background-color: rgba(255, 105, 180, 0.75);
+    color: #99004d;
+}
+
+.calendarEventindianred {
+    border-color: #892a2a !important;
+    background-color: rgba(205, 92, 92, 0.80);
+    color: #270c0c;
+}
+
+.calendarEventindigo {
+    border-color: #2d004d !important;
+    background-color: rgba(75, 0, 130, 0.85);
+    color: #f4e6ff;
+}
+
+.calendarEventivory {
+    border-color: #e6e600 !important;
+    background-color: rgba(255, 255, 240, 0.75);
+    color: #808000;
+}
+
+.calendarEventkhaki {
+    border-color: #e5d334 !important;
+    background-color: rgba(240, 230, 140, 0.65);
+    color: #9e9015;
+}
+
+.calendarEventlavender {
+    border-color: #bfbff2 !important;
+    background-color: rgba(230, 230, 250, 0.65);
+    color: #9595ea;
+}
+
+.calendarEventlavenderblush {
+    border-color: #ffccdd !important;
+    background-color: rgba(255, 240, 245, 0.70);
+    color: #ff99bb;
+}
+
+.calendarEventlawngreen {
+    border-color: #66cc00 !important;
+    background-color: rgba(124, 252, 0, 0.70);
+    color: #4d9900;
+}
+
+.calendarEventlemonchiffon {
+    border-color: #ffe81a !important;
+    background-color: rgba(255, 250, 205, 0.65);
+    color: #b3a100;
+}
+
+.calendarEventlightblue {
+    border-color: #76bdd5 !important;
+    background-color: rgba(173, 216, 230, 0.65);
+    color: #3691b0;
+}
+
+.calendarEventlightcoral {
+    border-color: #ea4848 !important;
+    background-color: rgba(240, 128, 128, 0.80);
+    color: #b71515;
+}
+
+.calendarEventlightcyan {
+    border-color: #99ffff !important;
+    background-color: rgba(224, 255, 255, 0.70);
+    color: #00cccc;
+}
+
+.calendarEventlightgoldenrodyellow {
+    border-color: #e6e619 !important;
+    background-color: rgba(250, 250, 210, 0.75);
+    color: #a1a112;
+}
+
+.calendarEventlightgreen {
+    border-color: #22dd22 !important;
+    background-color: rgba(144, 238, 144, 0.75);
+    color: #189a18;
+}
+
+.calendarEventlightgrey {
+    border-color: #a6a6a6 !important;
+    background-color: rgba(211, 211, 211, 0.75);
+    color: #737373;
+}
+
+.calendarEventlightpink {
+    border-color: #ff8093 !important;
+    background-color: rgba(255, 182, 193, 0.65);
+    color: #e60022;
+}
+
+.calendarEventlightsalmon {
+    border-color: #ff6d33 !important;
+    background-color: rgba(255, 160, 122, 0.75);
+    color: #cc3a00;
+}
+
+.calendarEventlightseagreen {
+    border-color: #17827d !important;
+    background-color: rgba(32, 178, 170, 0.75);
+    color: #0f5753;
+}
+
+.calendarEventlightskyblue {
+    border-color: #3baff7 !important;
+    background-color: rgba(135, 206, 250, 0.75);
+    color: #087cc4;
+}
+
+.calendarEventlightslategray {
+    border-color: #637383 !important;
+    background-color: rgba(119, 136, 153, 0.80);
+    color: #f0f2f4;
+}
+
+.calendarEventlightsteelblue {
+    border-color: #81a1ca !important;
+    background-color: rgba(176, 196, 222, 0.75);
+    color: #4b79b4;
+}
+
+.calendarEventlightyellow {
+    border-color: #e6e600 !important;
+    background-color: rgba(255, 255, 224, 0.75);
+    color: #999900;
+}
+
+.calendarEventlime {
+    border-color: #00cc00 !important;
+    background-color: rgba(0, 255, 0, 0.55);
+    color: #009900;
+}
+
+.calendarEventlimegreen {
+    border-color: #28a428 !important;
+    background-color: rgba(50, 205, 50, 0.70);
+    color: #196719;
+}
+
+.calendarEventlinen {
+    border-color: #eabf95 !important;
+    background-color: rgba(250, 240, 230, 0.75);
+    color: #d98c3f;
+}
+
+.calendarEventmagenta {
+    border-color: #b300b3 !important;
+    background-color: rgba(255, 0, 255, 0.70);
+    color: #660066;
+}
+
+.calendarEventmaroon {
+    border-color: #4d0000 !important;
+    background-color: rgba(128, 0, 0, 0.80);
+    color: #ffe6e6;
+}
+
+.calendarEventmediumaquamarine {
+    border-color: #38ad86 !important;
+    background-color: rgba(102, 205, 170, 0.75);
+    color: #25745a;
+}
+
+.calendarEventmediumblue {
+    border-color: #000099 !important;
+    background-color: rgba(0, 0, 205, 0.80);
+    color: #e6e6ff;
+}
+
+.calendarEventmediumorchid {
+    border-color: #79258e !important;
+    background-color: rgba(186, 85, 211, 0.80);
+    color: #230a29;
+}
+
+.calendarEventmediumpurple {
+    border-color: #7547d1 !important;
+    background-color: rgba(147, 112, 219, 0.85);
+    color: #f0ebfa;
+}
+
+.calendarEventmediumseagreen {
+    border-color: #2d8655 !important;
+    background-color: rgba(60, 179, 113, 0.75);
+    color: #20604d;
+}
+
+.calendarEventmediumslateblue {
+    border-color: #6047eb !important;
+    background-color: rgba(123, 104, 238, 0.85);
+    color: #ebe8fc;
+}
+
+.calendarEventmediumspringgreen {
+    border-color: #00cc7e !important;
+    background-color: rgba(0, 250, 154, 0.65);
+    color: #00804f;
+}
+
+.calendarEventmediumturquoise {
+    border-color: #29a39f !important;
+    background-color: rgba(72, 209, 204, 0.75);
+    color: #196663;
+}
+
+.calendarEventmediumvioletred {
+    border-color: #8a0f5d !important;
+    background-color: rgba(199, 21, 133, 0.75);
+    color: #2e051f;
+}
+
+.calendarEventmidnightblue {
+    border-color: #121254 !important;
+    background-color: rgba(25, 25, 112, 0.85);
+    color: #eaeafa;
+}
+
+.calendarEventmintcream {
+    border-color: #80ffbf !important;
+    background-color: rgba(245, 255, 250, 0.75);
+    color: #00cc66;
+}
+
+.calendarEventmistyrose {
+    border-color: #ffbab3 !important;
+    background-color: rgba(255, 228, 225, 0.70);
+    color: #ff7566;
+}
+
+.calendarEventmoccasin {
+    border-color: #ffbe4d !important;
+    background-color: rgba(255, 228, 181, 0.70);
+    color: #e69100;
+}
+
+.calendarEventnavajowhite {
+    border-color: #ffb84d !important;
+    background-color: rgba(255, 222, 173, 0.60);
+    color: #e68a00;
+}
+
+.calendarEventnavy {
+    border-color: #00004d !important;
+    background-color: rgba(0, 0, 128, 0.85);
+    color: #e6e6ff;
+}
+
+.calendarEventoldlace {
+    border-color: #f4c671 !important;
+    background-color: rgba(253, 245, 230, 0.75);
+    color: #d49011;
+}
+
+.calendarEventolive {
+    border-color: #4d4d00 !important;
+    background-color: rgba(128, 128, 0, 0.80);
+    color: #ffffe6;
+}
+
+.calendarEventolivedrab {
+    border-color: #4d6619 !important;
+    background-color: rgba(107, 142, 35, 0.80);
+    color: #f5faeb;
+}
+
+.calendarEventorange {
+    border-color: #b37400 !important;
+    background-color: rgba(255, 165, 0, 0.75);
+    color: #664200;
+}
+
+.calendarEventorangered {
+    border-color: #b33000 !important;
+    background-color: rgba(255, 69, 0, 0.75);
+    color: #4d1400;
+}
+
+.calendarEventorchid {
+    border-color: #a22a9e !important;
+    background-color: rgba(218, 112, 214, 0.80);
+    color: #51154f;
+}
+
+.calendarEventpalegoldenrod {
+    border-color: #d9cc3f !important;
+    background-color: rgba(238, 232, 170, 0.70);
+    color: #807719;
+}
+
+.calendarEventpalegreen {
+    border-color: #08dd08 !important;
+    background-color: rgba(152, 251, 152, 0.70);
+    color: #059405;
+}
+
+.calendarEventpaleturquoise {
+    border-color: #57dbdb !important;
+    background-color: rgba(175, 238, 238, 0.70);
+    color: #1f9393;
+}
+
+.calendarEventpalevioletred {
+    border-color: #b82e5c !important;
+    background-color: rgba(219, 112, 147, 0.80);
+    color: #661933;
+}
+
+.calendarEventpapayawhip {
+    border-color: #ffc466 !important;
+    background-color: rgba(255, 239, 213, 0.75);
+    color: #cc7e00;
+}
+
+.calendarEventpeachpuff {
+    border-color: #ffad66 !important;
+    background-color: rgba(255, 218, 185, 0.65);
+    color: #e66b00;
+}
+
+.calendarEventperu {
+    border-color: #8e5925 !important;
+    background-color: rgba(205, 133, 63, 0.85);
+    color: #3d2610;
+}
+
+.calendarEventpink {
+    border-color: #ff8095 !important;
+    background-color: rgba(255, 192, 203, 0.75);
+    color: #ff002b;
+}
+
+.calendarEventplum {
+    border-color: #c969c9 !important;
+    background-color: rgba(221, 160, 221, 0.75);
+    color: #832f83;
+}
+
+.calendarEventpowderblue {
+    border-color: #64c2ce !important;
+    background-color: rgba(176, 224, 230, 0.65);
+    color: #318f9b;
+}
+
+.calendarEventpurple {
+    border-color: #4d004d !important;
+    background-color: rgba(128, 0, 128, 0.80);
+    color: #ffe6ff;
+}
+
+.calendarEventred {
+    border-color: #cc0000 !important;
+    background-color: rgba(255, 0, 0, 0.65);
+    color: #800000;
+}
+
+.calendarEventrosybrown {
+    border-color: #804d4d !important;
+    background-color: rgba(188, 143, 143, 0.80);
+    color: #301d1d;
+}
+
+.calendarEventroyalblue {
+    border-color: #2251dd !important;
+    background-color: rgba(65, 105, 225, 0.80);
+    color: #e9eefc;
+}
+
+.calendarEventsaddlebrown {
+    border-color: #70380f !important;
+    background-color: rgba(139, 69, 19, 0.85);
+    color: #fcf1e9;
+}
+
+.calendarEventsalmon {
+    border-color: #f73722 !important;
+    background-color: rgba(250, 128, 114, 0.75);
+    color: #ac1706;
+}
+
+.calendarEventsandybrown {
+    border-color: #f08628 !important;
+    background-color: rgba(244, 164, 96, 0.75);
+    color: #a7540c;
+}
+
+.calendarEventseagreen {
+    border-color: #267347 !important;
+    background-color: rgba(46, 139, 87, 0.80);
+    color: #ecf9f1;
+}
+
+.calendarEventseashell {
+    border-color: #ffc499 !important;
+    background-color: rgba(255, 245, 238, 0.75);
+    color: #ff8833;
+}
+
+.calendarEventsienna {
+    border-color: #773d22 !important;
+    background-color: rgba(160, 82, 45, 0.85);
+    color: #f9f0eb;
+}
+
+.calendarEventsilver {
+    border-color: #999999 !important;
+    background-color: rgba(192, 192, 192, 0.75);
+    color: #666666;
+}
+
+.calendarEventskyblue {
+    border-color: #51b8e1 !important;
+    background-color: rgba(135, 206, 235, 0.75);
+    color: #1e85ae;
+}
+
+.calendarEventslateblue {
+    border-color: #4e3cc3 !important;
+    background-color: rgba(106, 90, 205, 0.85);
+    color: #edebf9;
+}
+
+.calendarEventslategray {
+    border-color: #596673 !important;
+    background-color: rgba(112, 128, 144, 0.85);
+    color: #f1f2f4;
+}
+
+.calendarEventsnow {
+    border-color: #ffb3b3 !important;
+    background-color: rgba(255, 250, 250, 0.75);
+    color: #ff8080;
+}
+
+.calendarEventspringgreen {
+    border-color: #00cc66 !important;
+    background-color: rgba(0, 255, 127, 0.60);
+    color: #008040;
+}
+
+.calendarEventsteelblue {
+    border-color: #396a93 !important;
+    background-color: rgba(70, 130, 180, 0.85);
+    color: #edf3f8;
+}
+
+.calendarEventtan {
+    border-color: #bf935a !important;
+    background-color: rgba(210, 180, 140, 0.75);
+    color: #815e32;
+}
+
+.calendarEventteal {
+    border-color: #004d4d !important;
+    background-color: rgba(0, 128, 128, 0.85);
+    color: #e6ffff;
+}
+
+.calendarEventthistle {
+    border-color: #bb90bb !important;
+    background-color: rgba(216, 191, 216, 0.65);
+    color: #9e619e;
+}
+
+.calendarEventtomato {
+    border-color: #ff2600 !important;
+    background-color: rgba(255, 99, 71, 0.80);
+    color: #991700;
+}
+
+.calendarEventturquoise {
+    border-color: #20c5b5 !important;
+    background-color: rgba(64, 224, 208, 0.75);
+    color: #126e64;
+}
+
+.calendarEventviolet {
+    border-color: #e74be7 !important;
+    background-color: rgba(238, 130, 238, 0.80);
+    color: #b418b4;
+}
+
+.calendarEventwheat {
+    border-color: #e8b14a !important;
+    background-color: rgba(245, 222, 179, 0.70);
+    color: #b57e17;
+}
+
+.calendarEventwhite {
+    border-color: #bfbfbf !important;
+    background-color: rgba(255, 255, 255, 0.75);
+    color: #a6a6a6;
+}
+
+.calendarEventwhitesmoke {
+    border-color: #bfbfbf !important;
+    background-color: rgba(245, 245, 245, 0.60);
+    color: #8c8c8c;
+}
+
+.calendarEventyellow {
+    border-color: #cccc00 !important;
+    background-color: rgba(255, 255, 0, 0.65);
+    color: #999900;
+}
+
+.calendarEventyellowgreen {
+    border-color: #7ba428 !important;
+    background-color: rgba(154, 205, 50, 0.75);
+    color: #4d6719;
+}
+
+.mTodayHighlight {
+    background-color: rgba(204, 230, 255, 0.4);
+}
+
+.wTodayHighlight {
+    background-color: rgba(204, 230, 255, 0.4);
+}
+
+.daySelected {
+    color: rgba(29, 110, 156, 0.5);
+}
+
+.bCalendarMEventOrange {
+    border-color: #f6a638;
+    background-color: rgba(250, 199, 158, 0.5);
+    color: rgba(195, 93, 9, 1.7);
+}
+
+.periodHighlight {
+    border-color: #4A84F3;
+}
+
+[qrcode] span.glyphicons.ok-sign:before {
+    color: #00a651;
+}
+
+[qrcode] span {
+    color: #CDCFD7;
+}
+
+.drillDownContainer {
+    background-color: #fff;
+}
+
+.IMDGraphItem {
+    background-color: #fff;
+}
+
+article[PI_Type='Application Quicklinks'] {
+    background-color: #FFF;
+    padding: 10px
+}
+
+.IMDContainer {
+    box-shadow: 1px 1px 2px 0px rgba(115, 131, 154, 0.25);
+}
+
+.publisherDashboard.engagement .listSelector,
+.publisherDashboard.documentsOnly .listSelector {
+    background-color: #E8E9EE;
+}
+
+article[PI_Type="Content Engagement"] .contentScores p,
+article[PI_Type="Content Engagement Average"] .contentAverages p,
+article[PI_Type="Document Content Engagement"] .contentScores p,
+article[PI_Type="Mandatory Document Content Engagement"] .contentScores p,
+article[PI_Type="Mandatory Read User"] documentReadDate,
+article[PI_Type="Mandatory Read User"] span {
+    color: #838996;
+}
+
+article[PI_Type="Content Engagement"] p.contentStat.belowAvgScore {
+    color: #E23C54;
+}
+
+article[PI_Type="Content Engagement"] p.contentStat.onOrAboveAvgScore {
+    color: #54BEA2;
+}
+
+.publisherDashboard.documentsOnly .tabbedLinks,
+.publisherDashboard.documentsOnly .tabSections,
+.myDocuments .tabbedLinks,
+.myDocuments .tabSections {
+    background: #FFF;
+}
+
+.publisherDashboard.documentsOnly .popupContainer .InputBox {
+    background-color: #E8E9EE;
+}
+
+.pi.intranetAnalytics.menu .InPageNav .Nav_TopUL {
+    border-bottom: #DADCE2 solid 1px !important;
+}
+
+.pi.intranetAnalytics.menu .Nav_LI A {
+    color: #4A84F3;
+}
+
+.PrimaryNavSelected {
+    background-color: #C5C8D1 !important;
+    color: #04456A;
+}
+
+.PrimaryNavSelected a {
+    color: #04456A;
+}
+
+.orgchart .middleLevel .title {
+    background-color: #3b76a9;
+}
+
+.orgchart .middleLevel .content {
+    border-color: #3b76a9;
+}
+
+.orgchart .bottomLevel .title {
+    background-color: #00a651;
+}
+
+.orgchart .bottomLevel .content {
+    border-color: #00a651;
+}
+
+.fa-border {
+    border: solid .08em #eee;
+}
+
+.fa-inverse {
+    color: #fff;
+}
+
+.fa-chevron-up:before {
+    color: #3b76a9 !important;
+}
+
+.fa-chevron-down:before {
+    color: #3b76a9 !important;
+}
+
+.fa-group:before,
+.fa-users:before {
+    color: #838996 !important;
+}
+
+.orgchart {
+    border: 2px dashed rgba(29, 110, 156, 0.15);
+}
+
+.orgchart > .spinner {
+    color: rgba(68, 157, 68, 0.8);
+}
+
+.orgchart tr.lines td.topLine {
+    border-top: 2px solid #DADCE2;
+}
+
+.orgchart tr.lines td.rightLine {
+    border-right: 1px solid #DADCE2;
+}
+
+.orgchart tr.lines td.leftLine {
+    border-left: 1px solid #DADCE2;
+}
+
+.orgchart tr.lines .downLine {
+    background-color: #DADCE2;
+}
+
+.orgchart .node > .spinner {
+    color: rgba(68, 157, 68, 0.8);
+}
+
+.orgchart .node:hover {
+    background-color: #ecf5fd;
+}
+
+.childCount {
+    color: #838996;
+}
+
+.orgchart .node.focused {
+    background-color: rgba(230, 230, 230, 0.6);
+}
+
+.orgchart .ghost-node > * {
+    fill: #ffffff;
+    stroke: #d81122;
+}
+
+.orgchart .node.allowedDrop {
+    border-color: rgba(68, 157, 68, 0.9);
+}
+
+.orgchart .node .title {
+    background-color: #DADCE2;
+    color: #fff;
+}
+
+.footer {
+    background-color: #DADCE2;
+    color: #fff;
+}
+
+.orgchart .node .content {
+    border: 1px solid #DADCE2;
+    background-color: #fff;
+    color: #2F313A;
+}
+
+.orgchart .node .edge {
+    color: rgba(68, 157, 68, 0.5);
+}
+
+.orgchart .edge:hover {
+    color: #00a651;
+}
+
+.orgchart .node .toggleBtn {
+    color: rgba(68, 157, 68, 0.6);
+}
+
+.orgchart .node .toggleBtn:hover {
+    color: rgba(68, 157, 68, 0.8);
+}
+
+.oc-export-btn {
+    color: #fff;
+    background-color: #00a651;
+    border-color: #00a651;
+}
+
+.oc-export-btn:hover,
+.oc-export-btn:focus,
+.oc-export-btn:active {
+    background-color: #00a651;
+    border-color: #00a651;
+}
+
+.orgchart ~ .mask {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.orgchart ~ .mask .spinner {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.topLevel {
+    background-color: #993366;
+}
+
+.home-link a {
+    color: #d81122;
+}
+
+.home-link a:hover {
+    text-shadow: 0 0 6px #d81122;
+}
+
+.home-link i {
+    color: #fff;
+    text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0, 0, 0, .1), 0 0 5px rgba(0, 0, 0, .1), 0 1px 3px rgba(0, 0, 0, .3), 0 3px 5px rgba(0, 0, 0, .2), 0 5px 10px rgba(0, 0, 0, .25), 0 10px 10px rgba(0, 0, 0, .2), 0 20px 20px rgba(0, 0, 0, .15);
+}
+
+.zoomInButton {
+    background-color: #4A84F3;
+    color: #FFFFFF;
+}
+
+.zoomOutButton {
+    background-color: #4A84F3;
+    color: #FFFFFF;
+}
+
+.centerButton {
+    background-color: #4A84F3;
+    color: #FFFFFF;
+}
+
+.fullHeaderContainer {
+    background-color: #4A84F3;
+}
+
+.fullHeaderContainer > a > * {
+    color: #FFFFFF;
+}
+
+article[PI_Type="Device Management"] .fullHeaderContainer {
+    color: #fff;
+}
+
+article[PI_Type="Device Management"],
+article[PI_Type="my team spaces"] {
+    background-color: #fff;
+}
+
+article[PI_Type="Device Management"].content .InputBox[name="device_name"] {
+    background-color: #F0F1F4;
+}
+
+article[PI_Type="Device Management"].content .InputBox {
+    background-color: #fff;
+    border: 1px #DADCE2 solid;
+}
+
+.expandedContent {
+    background: #F0F1F4;
+}
+
+article[PI_Type="Form Manager"] .expandedContent {
+    background: #FFF;
+}
+
+article[pi_type="FAQ_Expand"] .expandedContent {
+    background: #FFFFFF;
+}
+
+.formAsterisk {
+    color: #d81122;
+}
+
+a.formSubPending {
+    color: rgb(247, 153, 31) !important;
+}
+
+a.formSubApproved {
+    color: rgb(0, 166, 82) !important;
+}
+
+a.formSubRejected {
+    color: rgb(215, 17, 34) !important;
+}
+
+.notificationIntrusiveContainer .notificationContent .Textarea {
+    background-color: #F0F1F4;
+}
+
+div.viewByHeaderSelection,
+div.viewByHeader:hover {
+    background-color: #d0daf0;
+}
+
+.pi.singlepageview.formPreview .formMainPanel {
+    border-bottom: #DADCE2 solid 1px;
+    background-color: #ffffff;
+}
+
+.pi.singlepageview.formPreview .formDetails {
+    border-bottom: #DADCE2 solid 1px;
+    background-color: #ffffff;
+}
+
+.actionMenuParentIcon {
+    color: #CDCFD7;
+}
+
+.dropdownParent:hover .actionMenuParentIcon {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #838996;
+}
+
+.dropdownParent .dropdown {
+    box-shadow: 1px 1px 3px 1px rgba(115, 131, 154, 0.35);
+}
+
+.dropdownParent .dropdown:before {
+    border-bottom-color: #DADCE2;
+}
+
+.dropdownParent .dropdown:after {
+    border-bottom-color: #FFF;
+}
+
+.relatedContent .actionMenuParentIcon {
+    background-color: #E8E9EE;
+    color: #AFB2BD;
+}
+
+.relatedContent .dropdownParent:hover .actionMenuParentIcon {
+    background-color: #DADCE2;
+    color: #494E5B;
+}
+
+.activitySpinner:before {
+    border: 3px solid #333;
+}
+
+.loadingTextCover {
+    background-color: #fff;
+}
+
+.boldLoadingtext {
+    color: #494E5B;
+}
+
+.teamMember.remainingCount {
+    background-color: #4A84F3;
+}
+
+.jugglContactTitle {
+    color: #838996;
+}
+
+.jugglLocationInfo {
+    color: #838996;
+}
+
+.accountNotificationText {
+    color: #8f949b;
+}
+
+.toggleWithHover:hover {
+    background-color: #ECF5FD;
+}
+
+article[PI_Type="Office365 Team"] .toggleWithHover:hover {
+    background-color: #7A9EE3;
+}
+
+.pi.calendar .pageItemHeader .launchIcon,
+.pi.mail .pageItemHeader .launchIcon,
+.pi.tasks .pageItemHeader .launchIcon,
+.pi.popularDocs .pageItemHeader .launchIcon,
+.pi.recentDocs .pageItemHeader .launchIcon,
+.pi.sharepointDocuments .pageItemHeader .launchIcon,
+.pi.teams .pageItemHeader .launchIcon,
+.pi.myDocs .pageItemHeader .launchIcon,
+.pi.sharedDocs .pageItemHeader .launchIcon {
+    color: #AFB2BD;
+}
+
+.popupContainer.light {
+    background-color: rgba(255, 255, 255, 0.40);
+}
+
+.popupContainer.dark {
+    background-color: #23242B;
+}
+
+.popupContents {
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+    box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+}
+
+.popupContents a.beaconDelete {
+    color: #838996 !important;
+}
+
+.pi .note-editor.note-frame {
+    border: 0.5px solid #F0F1F4;
+}
+
+.pi .note-editor.note-frame.fullscreen {
+    box-shadow: 2px 2px 10px 0px rgba(101, 101, 101, 1);
+}
+
+.note-editor.note-frame .note-toolbar {
+    background: #F0F1F4;
+    border-bottom: 0.5px solid #E8E9EE;
+}
+
+.pi .note-editor.note-frame .note-statusbar {
+    background: #F0F1F4;
+    border-top: 0.5px solid #F0F1F4;
+}
+
+.note-editor .note-btn {
+    color: #494E5B;
+}
+
+.note-editor .note-btn:hover,
+.note-editor .note-dropdown-menu .note-btn:hover {
+    color: #494E5B;
+    background: #AFB2BD;
+}
+
+.note-editor .note-btn.active,
+.note-editor.note-frame.fullscreen .note-btn.btn-fullscreen-custom {
+    background-color: #DADCE2;
+}
+
+.note-dropdown-menu .note-btn {
+    background: #F0F1F4;
+}
+
+.note-tooltip .note-tooltip-content {
+    background-color: #4A84F3;
+}
+
+.note-tooltip.top .note-tooltip-arrow {
+    border-top-color: #4A84F3;
+}
+
+.note-tooltip.right .note-tooltip-arrow {
+    border-right-color: #4A84F3;
+}
+
+.note-tooltip.bottom .note-tooltip-arrow {
+    border-bottom-color: #4A84F3;
+}
+
+.note-tooltip.left .note-tooltip-arrow {
+    border-left-color: #4A84F3;
+}
+
+.note-editable {
+    color: #494E5B;
+}
+
+.notificationMenuParentIcon {
+    color: #CDCFD7;
+}
+
+a.note-editable > h1,
+a.note-dropdown-item > h1 {
+    color: #000;
+}
+
+a.note-editable > h2,
+a.note-dropdown-item > h2 {
+    color: #000;
+}
+
+.workingContainer {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+article[PI_Type='Anniversaries'] span.anniversaryIcon.glyphicons.certificate {
+    color: #8760BB;
+}
+
+article[PI_Type='Anniversaries'] span.anniversaryIcon.glyphicons.birthday-cake {
+    color: #FF8838;
+}
+
+.EventImageOverlay {
+    background-color: rgba(0, 0, 0, 0.27);
+}
+
+.EventImageOverlay p {
+    color: #fff;
+}
+
+article[pi_type='Event booking'] .contentContainer_EBI {
+    background-color: #ffffff;
+    border: 1px solid #E8E9EE;
+}
+
+div.col_qtr .EventImageOverlay,
+div.col_3rd .EventImageOverlay {
+    background-color: rgba(0, 0, 0, 0.27);
+}
+
+div.col_qtr .EventImageOverlay p,
+div.col_3rd .EventImageOverlay p {
+    color: #fff;
+}
+
+div.col_qtr article[pi_type='Event booking'] .contentContainer_EBI,
+div.col_3rd article[pi_type='Event booking'] .contentContainer_EBI {
+    background-color: #ffffff;
+    border: 1px solid #E8E9EE;
+}
+
+.h5Topic {
+    color: #4A84F3;
+}
+
+.topicArrow {
+    color: #FFFFFF;
+}
+
+.topicIcon {
+    color: #838996;
+}
+
+.topicTitle {
+    color: #FFFFFF;
+}
+
+.subscribeButton:hover {
+    background-color: #54BE82;
+}
+
+.systemTopic {
+    color: #494E5B;
+    background-color: #d9b1f0de;
+}
+
+.pswp__custom-caption {
+    background: #fff;
+    color: #000;
+}
+
+.engage_gallery article[pi_type="Image Album"] .contentImage {
+    box-shadow: 0px 3px 8px 0px rgba(0, 0, 0, 0.25);
+}
+
+.cdtEventImageOverlay {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+span.glyphicons.link.docShortcut {
+    color: #CDCFD7;
+}
+
+div.col_half div.cdtEventImageOverlay,
+div.col_half div.col_qtr div.cdtEventImageOverlay,
+div.col_qtr div.cdtEventImageOverlay,
+div.col_23rd div.col_3rd div.cdtEventImageOverlay,
+div.col_3rd .cdtEventImageOverlay,
+div.col_23rd .cdtEventImageOverlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    width: 100%
+}
+
+.knowledgeTagsDiv {
+    background-color: #F1F1F1 !important;
+}
+
+.lozenge:hover {
+    background-color: #4A84F3 !important;
+}
+
+dialog[open]::backdrop {
+    background-color: rgb(0 0 0 / 55%);
+}
+
+.KeywordSearch.sideBySide > .InputRegion {
+    border-right: 1px solid #ccc;
+}
+
+.KeywordEditorDialog .kwe_assigned_keywords,
+.KeywordEditorDialog .kw_suggested_keywords {
+    border: 1px solid #DADCE2;
+}
+
+.KeywordEditorDialog .kwe_assigned_keywords.no_keywords::before {
+    color: #ccc;
+}
+
+.KeywordEditorDialog .assigned_keyword {
+    background-color: #4a84f3;
+    color: #fff;
+}
+
+.KeywordEditorDialog .assigned_keyword a {
+    color: #fff;
+}
+
+#keywordGenerateButtonMobile {
+    display: block !important
+}
+
+.content_enhancement_container {
+    border: 1px solid #DADCE2;
+}
+
+.enhancement {
+    color: #4A84F3;
+}
+
+.enhancement.active {
+    background-color: #ecf5fd;
+    border-color: #007bff;
+}
+
+.contentEnhancementDialog .ce_enhanced_content,
+.contentEnhancementDialog .ce_original_content,
+.contentEnhancementDialog .ce_enhanced_content_title,
+.contentEnhancementDialog .ce_original_content_title {
+    border: 1px solid #DADCE2;
+    background-color: #E8E9EE;
+}
+
+.enhancement_select {
+    color: #4A84F3 !important;
+    border: 1px solid #aaa;
+    box-shadow: 0 1px 0 1px rgba(0, 0, 0, .04);
+    background-color: #fff;
+}
+
+.extractDataButton {
+    color: #4A84F3;
+}
+
+.glyphicons.beaconLike.beaconLikeLiked:hover:before {
+    background-color: rgba(74, 132, 243, 0.2);
+}
+
+.glyphicons.actionIcon.beaconLove.colourChecked_0:hover:before {
+    background-color: #f1f1f1;
+}
+
+div.webContent.showDesc div.webContentContainer {
+    background-color: #ffffff;
+    border: 1px solid #E8E9EE;
+}
+
+.moreReactionIcons {
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 2px 2px rgba(0, 0, 0, .15);
+}
+
+.legend-reaction {
+    color: #fff;
+}
+
+div[class*="highlight-unread-news" i] .news_unread .isUnread {
+    background-color: #4A84F3;
+    color: #fff;
+}
+
+.myDocuments .InputBox {
+    background-color: #E8E9EE;
+}

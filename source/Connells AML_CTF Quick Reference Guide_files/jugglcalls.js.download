@@ -1,0 +1,951 @@
+﻿if (!JUGGL) { var JUGGL = {}; }
+JugglCallNum = {
+    REINIT: -1,
+    INIT: 0,
+    GETWHOSIN: 1,
+    GETLOCATIONS: 2,
+    GETFLOORS: 3,
+    GETROOMS: 4,
+    SAVEFILTERDATA: 5,
+    GETFILTERDATA: 6
+}
+var apiInit = false;
+var dateForAPI;
+var usingSessionFilters = false;
+
+JUGGL.IsConnected = function () {
+    var accounts = BEACON.page.connectedAccounts['AuthentiationProviderStatuses'];
+    for (var i = 0; i < accounts.length; i++) {
+        if (accounts[i].AuthProvider === "Juggl") {
+            return accounts[i].Status === "Connected";
+        }
+    }
+    return false; // AuthProvider 'Juggl' not found
+};
+
+JUGGL.ApiCalls = {
+    init: function () {
+        $(document).on("BEACON:PAGE:connectedAccountInit", function () {
+            //on error
+            $('.pi.juggl:not(.accounts)').on("BEACON:PII:connectedAccountError", function (event, authProvider) {
+                //if the provider used is office365
+                if (authProvider === "Juggl") {
+                    //show page items
+                    $(this).addClass('displayNone');
+                    JUGGL.Media.processPlaceholders();
+                }
+            });
+            //on success
+            $('.pi.juggl:not(.accounts)').on("BEACON:PII:connectedAccountSuccess", function (event, authProvider) {
+                //if the provider used is not office365 then don't process
+                if (authProvider !== "Juggl") {
+                    return;
+                }
+                JUGGL.Media.processPlaceholders();
+                //only fire the inialisation once
+                if (!apiInit) {
+                    apiInit = true;
+                    //Get All piids
+                    var piis = $('.pi.juggl:not(accounts)');
+                    var pageItemInstanceIdString = "";
+                    for (var i = 0; i < piis.length; i++) {
+                        pageItemInstanceIdString += $(piis[i]).prop('id') + '|';
+                    }
+                    //fire juggl api page item init
+                    JUGGL.ApiCalls.CallAPI(JugglCallNum.INIT, null, {piids: pageItemInstanceIdString});
+                }
+
+                //start proccessing 
+                var $pii = $(this);
+                var $grp = $pii.find("div[isjugglpi = true]");
+                var piid = $pii.prop('id');
+                var CallType = $grp.attr("jugglcalltype");
+                var PageItemInstance = BEACON.page.pageItemInstanceById($pii.attr("id"));
+                $grp.attr("InitialResults", PageItemInstance["resultsRequested"]);
+                $grp.attr("IncrementResults", PageItemInstance["incrementRows"]);
+                $grp.attr("NoResultsMessage", PageItemInstance["noResultsFoundMessage"]);
+                $grp.attr("NoResultsMode", PageItemInstance["noResultsFoundMode"]);
+                var moreDataCall = false;
+
+                JUGGL.Rendering.GetCurrentDateForFilter();
+
+                $pii.removeClass('displayNone');
+
+                switch (parseInt(CallType)) {
+                    case JugglCallNum.GETWHOSIN:
+                        JUGGL.Rendering.AddJugglAreaFilterBoxes(piid);
+                        if (!usingSessionFilters) {
+                            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), JUGGL.Rendering.DisplayData);
+                        }
+                        break;
+
+                    default:
+                        console.log("Unrecognised Call Type for PII: " + $pii.prop("id"));
+                        return "Error";
+                }
+            });
+        });
+    },
+
+    RetryConnection: function () {
+        JUGGL.ApiCalls.CallAPI(JugglCallNum.REINIT,null,null,this.RefreshConnectionStatus)
+    },
+    RefreshConnectionStatus: function (returndata) {
+        var ConnectedAccount = BEACON.page.connectedAccounts['AuthentiationProviderStatuses'];
+        for (var p = 0; p < ConnectedAccount.length; p++) {
+            if (ConnectedAccount[p].AuthProvider === "Juggl") {
+                ConnectedAccount[p].Status = "Connected";
+                ConnectedAccount[p].message = "Account is connected";
+            }
+        }
+        BEACON.accountConnections.init();
+    },
+    CallAPI : function(callType, jugglPIID, postData, DataDisplayCallBack) {
+        //Pending ASHX calls
+        var ashxURL;
+        if (postData != null) {
+            if (postData.FloorID == null && postData.RoomID == null && postData.LocationID == null) {
+                JUGGL.Rendering.ResultsFilteredRendering(jugglPIID, false);
+            }
+            else {
+                JUGGL.Rendering.ResultsFilteredRendering(jugglPIID, true);
+            }
+        }
+        if (jugglPIID != null) {
+            var date = JUGGL.ApiCalls.GetDateData(jugglPIID);
+            if (date != null) {
+                if (postData == null) {
+                    postData = {};
+                }
+                postData.DateTo = date;
+                postData.DateFrom = date;
+            }
+        }
+
+        data = { CallType: callType, PostData: postData };
+
+        //Do the full save ASHX
+        ashxURL = "/sorce/beacon/pageitem/Juggl/JugglPageItemCalls.ashx";
+        $.ajax({
+            url: ashxURL
+            , async: true
+            , method: 'POST'
+            , dataType: "json"
+            , data: JSON.stringify(data)
+            , contentType: "application/json"
+            , complete: function (response) {
+                if (callType !== JugglCallNum.REINIT && callType !== JugglCallNum.INIT && callType !== JugglCallNum.SAVEFILTERDATA) {
+                    if (response.status != 500) {
+                        DataDisplayCallBack(response, jugglPIID, postData);
+                    }
+                    else {
+                        //Connection error 
+                    }
+                }
+                else if (callType == JugglCallNum.INIT && response.responseText == "Reconnect") {
+                    BEACON.accountConnections.init();
+                }
+                else if (callType == JugglCallNum.INIT && response.responseText != "") {
+                    //Couldn't find a workspace
+                    var jugglDatasets = JSON.parse(response.responseText);
+                    if (jugglDatasets.success == "false") {
+                        //No workspace 
+                        JUGGL.Rendering.AddNoWorkspaceMessage(response);
+                    }
+                    else {
+                        //Check for filter data
+                        JUGGL.Rendering.GetLocationDataFromDB(response.responseJSON);
+
+                    }
+                }
+                else if (callType == JugglCallNum.REINIT) {
+                    if (response.status != 500 && response.responseJSON) {
+                        DataDisplayCallBack(response);
+                    }
+                }
+                return response;
+            }
+            , error: function (xhr, status, errorthrown) {
+                if (xhr.responseText) {
+
+                    var connectionStatusChanged = false;
+                    var ConnectedAccount = BEACON.page.connectedAccounts['AuthentiationProviderStatuses'];
+                    for (var p = 0; p < ConnectedAccount.length; p++) {
+                        if (ConnectedAccount[p].AuthProvider === "Juggl") {
+                            if (xhr.responseText === "Reconnect" || xhr.responseText === "Disconnected") {
+                                if (ConnectedAccount[p].Status !== xhr.responseText) {
+                                    ConnectedAccount[p].Status = xhr.responseText;
+                                    connectionStatusChanged = true;
+                                }
+                            }
+                        }
+                    }
+                    if (connectionStatusChanged) {
+                        $('#' + jugglPIID).hide();
+                        BEACON.accountConnections.init();
+                    }
+                    return xhr.responseText;
+
+                }
+            }
+        });
+
+
+    },
+
+    FilterByLocation: function (locationID, piid) {
+        if (locationID != 0) {
+            PostData = { LocationID: locationID };
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETFLOORS, piid, PostData, JUGGL.Rendering.ChangeFloorFilter);
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, PostData, JUGGL.Rendering.DisplayData);
+            var roomFilterSelect = $(jugglPI).find("[name=JugglRoomSelect]").first();
+            $(roomFilterSelect).empty();
+            var PlaceholderOption = document.createElement('option');
+            PlaceholderOption.innerText = "Select a room";
+            PlaceholderOption.value = 0;
+            $(roomFilterSelect).append(PlaceholderOption);
+        }
+        else {
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, null, JUGGL.Rendering.DisplayData);
+            var jugglPI = $('#' + piid)[0];
+            var roomFilterSelect = $(jugglPI).find("[name=JugglRoomSelect]").first();
+            $(roomFilterSelect).empty();
+            var PlaceholderOption = document.createElement('option');
+            PlaceholderOption.innerText = "Select a room";
+            PlaceholderOption.value = 0;
+            $(roomFilterSelect).append(PlaceholderOption);
+            var floorFilterSelect = $(jugglPI).find("[name=JugglFloorSelect]").first();
+            var PlaceholderOption2 = document.createElement('option');
+            $(floorFilterSelect).empty();
+            PlaceholderOption2.innerText = "Select a floor";
+            PlaceholderOption2.value = 0;
+            $(floorFilterSelect).append(PlaceholderOption2);
+
+
+        }
+    },
+
+    FilterByFloor: function (locationID, floorID, piid) {
+        if (floorID == 0) {
+            PostData = { LocationID: locationID };
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, PostData, JUGGL.Rendering.DisplayData);
+            var jugglPI = $('#' + piid)[0];
+            var roomFilterSelect = $(jugglPI).find("[name=JugglRoomSelect]").first();
+            $(roomFilterSelect).empty();
+            var PlaceholderOption = document.createElement('option');
+            PlaceholderOption.innerText = "Select a room";
+            PlaceholderOption.value = 0;
+            $(roomFilterSelect).append(PlaceholderOption);
+        }
+        else {
+            PostData = { LocationID: locationID, FloorID: floorID };
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETROOMS, piid, PostData, JUGGL.Rendering.ChangeRoomFilter);
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, PostData, JUGGL.Rendering.DisplayData);
+        }
+    },
+
+    FilterByRoom: function (locationID, floorID, roomID, piid) {
+        if (roomID == 0) {
+            PostData = { LocationID: locationID, FloorID: floorID };
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, PostData, JUGGL.Rendering.DisplayData);
+        }
+        else {
+            PostData = { LocationID: locationID, FloorID: floorID, RoomID: roomID };
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, PostData, JUGGL.Rendering.DisplayData);
+        }
+    },
+
+    DisplayLocationData : function(responseData, piid, postData) {
+        var jugglPI = $('#' + piid)[0];
+        var dataEntryPoint = $(jugglPI).find("[name=juggldataentrypoint]");
+    },
+
+    GetDateData: function (piid) {
+        var jugglPI = $('#' + piid)[0];
+        var date = $(jugglPI).find("input[name=JugglDateFilter]").first().val();
+        if (date == "" || date == undefined) { date = null; }
+        return date;
+    }
+}
+
+JUGGL.Rendering = {
+
+    CreateWhosInDeskBookingData: function (bookingData) {
+        var showAdditionalInfoSection = false;
+        if (bookingData.JugglDesk.additionalInfo || bookingData.JugglFloor.additionalInfo || bookingData.JugglLocation.additionalInfo) {
+            showAdditionalInfoSection = true;
+        }
+        var bookingContainingDiv = document.createElement('div');
+        bookingContainingDiv.className = "block bottomMargin_medium InputRegion flexContainer"
+
+        var imageContainerDIV = document.createElement('div');
+        imageContainerDIV.className = "inlineBlock"
+
+        var contactImage = document.createElement('img');
+        $(contactImage).attr("src", bookingData.BookedFor.userImagePath);
+        contactImage.className = "AuthorImage rightMargin_medium topMargin_medium";
+        $(imageContainerDIV).append(contactImage);
+
+        var deskDataContainerDIV = document.createElement('div');
+        deskDataContainerDIV.className = "inlineBlock flexItem flexItem-grow-medium";
+
+        $(bookingContainingDiv).append(imageContainerDIV);
+        $(bookingContainingDiv).append(deskDataContainerDIV);
+
+        var bookingName = document.createElement('p');
+        if (bookingData.BookedFor.Name == " ") {
+            bookingName.innerText = bookingData.BookedFor.email;
+        }
+        else {
+            bookingName.innerText = bookingData.BookedFor.Name;
+        }
+        bookingName.className = "jugglContactTitle contentBody";
+        $(deskDataContainerDIV).append(bookingName);
+
+        var deskNameDetailsElement = document.createElement('div');
+        $(deskDataContainerDIV).append(deskNameDetailsElement);
+
+        var deskNameElement = document.createElement('p');
+        deskNameElement.innerText = bookingData.JugglDesk.Name;
+
+        var bookingFromDate = new Date(bookingData.BookedFor.BookingFrom);
+        var bookingToDate = new Date(bookingData.BookedFor.BookingTo);
+        var dateShown = false;
+        if (moment(bookingToDate.getTime()).format("HH:mm:ss") !== "23:59:59") {
+            //add the time 
+            var deskTimeElement = document.createElement('p');
+            deskTimeElement.innerText = moment(bookingFromDate.getTime()).format("HH:mm") + " - " + moment(bookingToDate.getTime()).format("HH:mm");
+
+            deskNameElement.className = "inlineBlock";
+            deskTimeElement.className = "inlineBlock leftMargin_medium";
+            $(deskNameDetailsElement).append(deskNameElement);
+
+            $(deskNameDetailsElement).append(deskTimeElement);
+            dateShown = true;
+        }
+        else {
+            $(deskNameDetailsElement).append(deskNameElement);
+        }
+
+        var locationInfoElement = document.createElement('p');
+        locationInfoElement.innerText = bookingData.JugglLocation.Name + " / " + bookingData.JugglFloor.Name + " / " + bookingData.JugglRoom.Name;
+        locationInfoElement.className = "jugglLocationInfo";
+        $(deskDataContainerDIV).append(locationInfoElement);
+
+        if (showAdditionalInfoSection || dateShown) {
+            var additionalInfoElementContainer = document.createElement('div');
+            additionalInfoElementContainer.className = "flexItem ";
+            $(bookingContainingDiv).append(additionalInfoElementContainer);
+
+            var additionalInfoIconElement = document.createElement('a');
+            $(additionalInfoIconElement).attr("onclick", "JUGGL.Rendering.ToggleAdditionalinfoArea(this);");
+            additionalInfoIconElement.className = "glyphicons info-sign";
+            $(additionalInfoIconElement).attr("title", "Open additional info");
+            $(additionalInfoElementContainer).append(additionalInfoIconElement);
+
+            var additionalInfoHiddenAreaContainer = document.createElement('div');
+            $(additionalInfoHiddenAreaContainer).attr("name", "AdditionalInfo");
+            additionalInfoHiddenAreaContainer.className = "flexItem popupContents";
+            $(additionalInfoHiddenAreaContainer).prop("style", "display: none;");
+            $(additionalInfoElementContainer).append(additionalInfoHiddenAreaContainer);
+
+            if (bookingData.JugglLocation.additionalInfo) {
+                var titleElement = document.createElement('h4');
+                titleElement.innerText = bookingData.JugglLocation.Name;
+                $(additionalInfoHiddenAreaContainer).append(titleElement);
+
+                var infoElement = document.createElement('p');
+                infoElement.innerText = bookingData.JugglLocation.additionalInfo;
+                $(additionalInfoHiddenAreaContainer).append(infoElement);
+            }
+
+            if (bookingData.JugglFloor.additionalInfo) {
+                var titleElement = document.createElement('h4');
+                titleElement.innerText = bookingData.JugglFloor.Name;
+                $(additionalInfoHiddenAreaContainer).append(titleElement);
+
+                var infoElement = document.createElement('p');
+                infoElement.innerText = bookingData.JugglFloor.additionalInfo;
+                $(additionalInfoHiddenAreaContainer).append(infoElement);
+            }
+
+            if (bookingData.JugglRoom.additionalInfo) {
+                var titleElement = document.createElement('h4');
+                titleElement.innerText = bookingData.JugglRoom.Name;
+                $(additionalInfoHiddenAreaContainer).append(titleElement);
+
+                var infoElement = document.createElement('p');
+                infoElement.innerText = bookingData.JugglRoom.additionalInfo;
+                $(additionalInfoHiddenAreaContainer).append(infoElement);
+            }
+
+            if (bookingData.JugglDesk.additionalInfo) {
+                var titleElement = document.createElement('h4');
+                titleElement.innerText = bookingData.JugglDesk.Name;
+                $(additionalInfoHiddenAreaContainer).append(titleElement);
+
+                var infoElement = document.createElement('p');
+                infoElement.innerText = bookingData.JugglDesk.additionalInfo;
+                $(additionalInfoHiddenAreaContainer).append(infoElement);
+            }
+
+            if (dateShown) {
+                var infoElement = document.createElement('p');
+                infoElement.innerText = "All times are local to the timezones of the desk";
+                $(additionalInfoHiddenAreaContainer).append(infoElement);
+            }
+
+        }
+
+        return bookingContainingDiv;
+    },
+
+    AddNoResultsFoundObjects: function (dataEntryPoint) {
+        //Add no results found 
+        var noResultsFoundText = document.createElement('p');
+        noResultsFoundText.innerText = "No results found";
+        noResultsFoundText.className = 'inlineBlock rightMargin_medium';
+        $(dataEntryPoint).append(noResultsFoundText);
+    },
+
+    ToggleAdditionalinfoArea: function (iconElement) {
+        var InfoBox = $(iconElement).siblings("[name=AdditionalInfo]").first();
+        if ($(InfoBox).is(":visible")) {
+            $(InfoBox).toggle();
+        }
+        else {
+            $("[name=AdditionalInfo]").hide();
+            var pageItem = $(iconElement).closest("[pii=true]")[0];
+            var Content = $(iconElement).closest(".flexContainer")[0];
+            var please = Content.getBoundingClientRect();
+            InfoBox[0].style.position = "absolute";
+            InfoBox[0].style.margin = "0";
+            InfoBox[0].style.left = please.left + "px";
+            InfoBox[0].style.top = please.bottom - 5 + $(window).scrollTop() + "px";
+            InfoBox[0].style.width = please.width + "px";
+            InfoBox[0].style.zIndex = "9999";
+            $(InfoBox).first().show();
+        }
+
+    },
+
+    AddJugglAreaFilterBoxes: function (piid) {
+        var jugglPI = $('#' + piid)[0];
+        var filterEntryPoint = $(jugglPI).find("[name=jugglfilterentrypoint]");
+
+        var locationSelectDiv = $(filterEntryPoint).find("[name=JugglLocation]");
+        var locationSelect = document.createElement('select');
+        $(locationSelect).attr("name", "JugglLocationSelect");
+        locationSelect.className = "listSelector bottomMargin_none";
+        $(locationSelectDiv).append(locationSelect);
+        var locationOption = document.createElement('option');
+        locationOption.innerText = "Select a location";
+        locationOption.value = 0;
+        $(locationSelect).append(locationOption);
+
+        var floorSelectDiv = $(filterEntryPoint).find("[name=JugglFloor]");
+        var floorSelect = document.createElement('select');
+        $(floorSelect).attr("name", "JugglFloorSelect");
+        floorSelect.className = "listSelector bottomMargin_none";
+        $(floorSelectDiv).append(floorSelect);
+        var floorOption = document.createElement('option');
+        floorOption.innerText = "Select a floor";
+        floorOption.value = 0;
+        $(floorSelect).append(floorOption);
+
+        var roomSelectDiv = $(filterEntryPoint).find("[name=JugglRoom]");
+        var roomSelect = document.createElement('select');
+        $(roomSelect).attr("name", "JugglRoomSelect");
+        roomSelect.className = "listSelector bottomMargin_none";
+        $(roomSelectDiv).append(roomSelect);
+        var roomOption = document.createElement('option');
+        roomOption.innerText = "Select a room";
+        roomOption.value = 0;
+        $(roomSelect).append(roomOption);
+
+        $(floorSelect).change(function (event) {
+            var floorSelect = event.target;
+            var piid = $(floorSelect).closest("[pii=true]").first().attr("id");
+
+            JUGGL.ApiCalls.FilterByFloor(locationSelect.options[locationSelect.selectedIndex].value, floorSelect.options[floorSelect.selectedIndex].value, piid);
+        });
+
+        $(locationSelect).change(function (event) {
+            var locationSelect = event.target;
+            var piid = $(floorSelect).closest("[pii=true]").first().attr("id");
+            JUGGL.ApiCalls.FilterByLocation(locationSelect.options[locationSelect.selectedIndex].value, piid);
+        });
+
+        $(roomSelect).change(function (event) {
+            var roomSelect = event.target;
+            var piid = $(floorSelect).closest("[pii=true]").first().attr("id");
+            JUGGL.ApiCalls.FilterByRoom(locationSelect.options[locationSelect.selectedIndex].value, floorSelect.options[floorSelect.selectedIndex].value, roomSelect.options[roomSelect.selectedIndex].value, piid);
+        });
+    },
+
+    AddOnChangeEventsToDropdowns: function (piid) {
+
+    },
+
+    DisplayData: function (responseData, piid, PostData) {
+        var jugglPI = $('#' + piid)[0];
+        var dataEntryPoint = $(jugglPI).find("[name=juggldataentrypoint]");
+        $(dataEntryPoint).empty();
+        if (responseData.responseText != "") {
+            var jugglDatasets = JSON.parse(responseData.responseText);
+
+            if (jugglDatasets != null) {
+                if (jugglDatasets.bookings.length < 1) {
+                    JUGGL.Rendering.AddNoResultsFoundObjects(dataEntryPoint);
+                }
+                else {
+                    //Display the data
+                    for (var i = 0; i < jugglDatasets.bookings.length; i++) {
+                        $(dataEntryPoint).append(JUGGL.Rendering.CreateWhosInDeskBookingData(jugglDatasets.bookings[i]));
+                    }
+                }
+            }
+            else {
+                JUGGL.Rendering.AddNoResultsFoundObjects(dataEntryPoint);
+            }
+        }
+    },
+
+    ChangeLocationFilter: function (responseData, piid, PostData) {
+        var jugglPI = $('#' + piid)[0];
+        var filterEntryPoint = $(jugglPI).find("[name=jugglfilterentrypoint]");
+        var jugglDatasets = JSON.parse(responseData.responseText);
+        var locationSelect = $(filterEntryPoint).find("[name=JugglLocationSelect]");
+
+        for (var i = 0; i < jugglDatasets.AreaInfo.JugglLocations.length; i++) {
+            var locationOption = document.createElement('option');
+            locationOption.innerText = jugglDatasets.AreaInfo.JugglLocations[i].Name;
+            locationOption.value = jugglDatasets.AreaInfo.JugglLocations[i].id;
+            $(locationSelect).append(locationOption);
+        }
+    },
+
+    ChangeLocationFilterWithData: function (responseData, piid, data) {
+        JUGGL.Rendering.ChangeLocationFilter(responseData, piid, null);
+        var jugglPI = $('#' + piid)[0];
+        var LocationSelect = $(jugglPI).find("[name=jugglfilterentrypoint]").find("[name=JugglLocationSelect]").first();
+        $(LocationSelect).val(data.LocationID);
+        if (data.FloorID == null) {
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), JUGGL.Rendering.DisplayData);
+        }
+    },
+
+    ChangeFloorFilter: function (responseData, piid, PostData) {
+        var jugglPI = $('#' + piid)[0];
+        var filterEntryPoint = $(jugglPI).find("[name=jugglfilterentrypoint]");
+        var floorSelect = $(filterEntryPoint).find("[name=JugglFloorSelect]");
+        JUGGL.Rendering.DeleteFilterData(floorSelect);
+        var jugglDatasets = JSON.parse(responseData.responseText);
+        var floorOption = document.createElement('option');
+        floorOption.innerText = "Select a floor";
+        floorOption.value = 0;
+        $(floorSelect).append(floorOption);
+
+        for (var i = 0; i < jugglDatasets.AreaInfo.JugglLocations[0].JugglFloors.length; i++) {
+            var floorOption = document.createElement('option');
+            floorOption.innerText = jugglDatasets.AreaInfo.JugglLocations[0].JugglFloors[i].Name;
+            floorOption.value = jugglDatasets.AreaInfo.JugglLocations[0].JugglFloors[i].id;
+            $(floorSelect).append(floorOption);
+        }
+    },
+
+    ChangeFloorFilterWithData: function (responseData, piid, data) {
+        JUGGL.Rendering.ChangeFloorFilter(responseData, piid, null);
+        var jugglPI = $('#' + piid)[0];
+        var FloorSelect = $(jugglPI).find("[name=jugglfilterentrypoint]").find("[name=JugglFloorSelect]").first();
+        $(FloorSelect).val(data.FloorID);
+
+        if (data.RoomID == null) {
+            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), JUGGL.Rendering.DisplayData);
+        }
+
+    },
+
+    ChangeRoomFilter: function (responseData, piid, PostData) {
+        var jugglPI = $('#' + piid)[0];
+        var filterEntryPoint = $(jugglPI).find("[name=jugglfilterentrypoint]");
+        var roomSelect = $(filterEntryPoint).find("[name=JugglRoomSelect]");
+        JUGGL.Rendering.DeleteFilterData(roomSelect);
+        var jugglDatasets = JSON.parse(responseData.responseText);
+        var roomOption = document.createElement('option');
+        roomOption.innerText = "Select a room";
+        roomOption.value = 0;
+        $(roomSelect).append(roomOption);
+
+        for (var i = 0; i < jugglDatasets.AreaInfo.JugglLocations[0].JugglFloors[0].JugglRooms.length; i++) {
+            var roomOption = document.createElement('option');
+            roomOption.innerText = jugglDatasets.AreaInfo.JugglLocations[0].JugglFloors[0].JugglRooms[i].Name;
+            roomOption.value = jugglDatasets.AreaInfo.JugglLocations[0].JugglFloors[0].JugglRooms[i].id;
+            $(roomSelect).append(roomOption);
+        }
+    },
+
+    ChangeRoomFilterWithData: function (responseData, piid, data) {
+        JUGGL.Rendering.ChangeRoomFilter(responseData, piid, null);
+        var jugglPI = $('#' + piid)[0];
+        var RoomSelect = $(jugglPI).find("[name=jugglfilterentrypoint]").find("[name=JugglRoomSelect]").first();
+        $(RoomSelect).val(data.RoomID);
+        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), JUGGL.Rendering.DisplayData);
+    },
+
+    DeleteFilterData: function (SelectObject) {
+        $(SelectObject).empty();
+    },
+
+    NextDay: function (nextButton) {
+        var piid = $(nextButton).closest("[pii=true]").prop("id");
+        var date = JUGGL.ApiCalls.GetDateData(piid);
+        var nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        nextDate = moment(nextDate).format('yyyy-MM-DD');
+        var dateInput = $(nextButton).closest("div[name=JugglDateFilter]").find("input[name=JugglDateFilter]")[0];
+        dateInput.value = nextDate;
+        this.ChangeHeadingDate(nextDate, piid);
+        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), this.DisplayData);
+    },
+
+    PrevDay: function (prevButton) {
+        var piid = $(prevButton).closest("[pii=true]").prop("id");
+        var date = JUGGL.ApiCalls.GetDateData(piid);
+        var prevDate = new Date(date);
+        prevDate.setDate(prevDate.getDate() - 1);
+        prevDate = moment(prevDate).format('yyyy-MM-DD');
+        var dateInput = $(prevButton).closest("div[name=JugglDateFilter]").find("input[name=JugglDateFilter]")[0];
+        dateInput.value = prevDate;
+        this.ChangeHeadingDate(prevDate, piid);
+        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), this.DisplayData);
+    },
+
+    GetCurrentDateForFilter: function () {
+        var DateFilters = $("input[name=JugglDateFilter]");
+        var d = new Date();
+        d = moment(d).format('yyyy-MM-DD');
+        DateFilters[0].value = d;
+        for (var i = 0; i < DateFilters.length; i++) {
+            DateFilters[i].value = d;
+            this.ChangeHeadingDate(d, $(DateFilters[i]).closest("[pii=true]").prop("id"));
+        }
+    },
+
+    ResetLocationFilters: function (ButtonElement) {
+        var FilterDiv = $(ButtonElement).closest("[name=jugglfilterentrypoint]").first();
+        $(FilterDiv).find("[name=JugglLocationSelect]").first().empty();
+        $(FilterDiv).find("[name=JugglFloorSelect]").first().empty();
+        $(FilterDiv).find("[name=JugglRoomSelect]").first().empty();
+        var locationOption = document.createElement('option');
+        locationOption.innerText = "Select a location";
+        locationOption.value = 0;
+        $(FilterDiv).find("[name=JugglLocationSelect]").first().append(locationOption);
+        var floorOption = document.createElement('option');
+        floorOption.innerText = "Select a floor";
+        floorOption.value = 0;
+        $(FilterDiv).find("[name=JugglFloorSelect]").first().append(floorOption);
+        var roomOption = document.createElement('option');
+        roomOption.innerText = "Select a room";
+        roomOption.value = 0;
+        $(FilterDiv).find("[name=JugglRoomSelect]").append(roomOption);
+        $(FilterDiv).hide();
+        var piid = $(FilterDiv).closest("[pii=true]").first().prop("id");
+        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETWHOSIN, piid, JUGGL.Rendering.GetLocationFilterData(piid), this.DisplayData);
+    },
+
+    SaveLocationDataToDB: function (element) {
+        var piid = $(element).closest("[pii=true]").prop("id");
+        //Saving the location filter data to the DB
+        var locationData = this.GetLocationFilterData(piid);
+        var jugglFilterData = { piids: piid, LocationID: locationData.LocationID, LocationText: locationData.LocationText, FloorID: locationData.FloorID, FloorText: locationData.FloorText, RoomID: locationData.RoomID, RoomText: locationData.RoomText };
+        JUGGL.ApiCalls.CallAPI(JugglCallNum.SAVEFILTERDATA, piid, jugglFilterData);
+
+        var jugglPI = $('#' + piid)[0];
+        $(jugglPI).find("[name=jugglfilterentrypoint]").first().hide();
+    },
+
+    GetLocationDataFromDB: function (data) {
+        //var jugglFilterData = sessionStorage.getItem("jugglFilterData");
+        if (data.length != 0) {
+            for (var DataNum = 0; DataNum < data.length; DataNum++) {
+                jugglFilterData = JSON.parse(data[DataNum]);
+
+                var piid = jugglFilterData.PageItemInstanceId;
+
+                var PostData = {};
+                if (jugglFilterData != "[]" && jugglFilterData != null) {
+                    usingSessionFilters = true;
+                    if (jugglFilterData.LocationID != null) {
+                        PostData = { LocationID: jugglFilterData.LocationID };
+                        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETLOCATIONS, piid, PostData, JUGGL.Rendering.ChangeLocationFilterWithData);
+                        if (jugglFilterData.FloorID != "") {
+                            PostData.FloorID = jugglFilterData.FloorID;
+                            if (jugglFilterData.RoomID != "") {
+                                PostData.RoomID = jugglFilterData.RoomID;
+                            }
+                        }
+                    }
+                    else {
+                        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETLOCATIONS, piid, null, JUGGL.Rendering.ChangeLocationFilter);
+                    }
+                    if (jugglFilterData.FloorID != "") {
+                        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETFLOORS, piid, PostData, JUGGL.Rendering.ChangeFloorFilterWithData);
+
+                        if (jugglFilterData.RoomID != "") {
+                            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETROOMS, piid, PostData, JUGGL.Rendering.ChangeRoomFilterWithData);
+                        }
+                        else {
+                            JUGGL.ApiCalls.CallAPI(JugglCallNum.GETROOMS, piid, PostData, JUGGL.Rendering.ChangeRoomFilter);
+                        }
+                    }
+                    else {
+                        JUGGL.ApiCalls.CallAPI(JugglCallNum.GETFLOORS, piid, PostData, JUGGL.Rendering.ChangeFloorFilter);
+                    }
+                }
+                else {
+                    JUGGL.ApiCalls.CallAPI(JugglCallNum.GETLOCATIONS, piid, null, JUGGL.Rendering.ChangeLocationFilter);
+                    return null;
+                }
+            }
+        }
+        else {
+            //No data against any of the page items on this page 
+            var jugglPis = $(".juggl.pi");
+            for (var piNum = 0; piNum < jugglPis.length; piNum++) {
+                JUGGL.ApiCalls.CallAPI(JugglCallNum.GETLOCATIONS, $(jugglPis[piNum]).prop("id"), null, JUGGL.Rendering.ChangeLocationFilter);
+            }
+            return null;
+        }
+    },
+
+    GetLocationFilterData: function(piid) {
+        var jugglPI = $('#' + piid)[0];
+        var locationSelect = $(jugglPI).find("[name=JugglLocationSelect]")[0];
+        var floorSelect = $(jugglPI).find("[name=JugglFloorSelect]")[0];
+        var roomSelect = $(jugglPI).find("[name=JugglRoomSelect]")[0];
+        var PostData = {};
+        if (locationSelect.value != "0") { PostData.LocationID = locationSelect.value; PostData.LocationText = locationSelect.innerText; }
+        if (floorSelect.value != "0") { PostData.FloorID = floorSelect.value; PostData.FloorText = floorSelect.innerText;}
+        if (roomSelect.value != "0") { PostData.RoomID = roomSelect.value; PostData.RoomText = roomSelect.innerText;}
+        return PostData;
+    },
+
+    ChangeHeadingDate: function (givenDate, piid) {
+        var jugglPI = $('#' + piid)[0];
+        var TodaysDate = new Date();
+        var DateHeading = $(jugglPI).find("[name=DateHeading]")[0];
+        var DateText = moment(givenDate).format('MMMM Do');
+        if (moment(TodaysDate).format('yyyy-MM-DD') == givenDate) { DateText += " (Today)"; }
+        DateText = moment(givenDate).format('ddd, Do MMM');
+        DateHeading.innerText = DateText;
+    },
+
+    AddNoWorkspaceMessage: function (data, piid) {
+        var jugglPI = $('#' + piid)[0];
+        var dataEntryPoint = $(jugglPI).find("[name=juggldataentrypoint]");
+        var noWorkspaceText = document.createElement('p');
+        noWorkspaceText.innerText = data.responseText;
+        noWorkspaceText.className = 'inlineBlock rightMargin_medium';
+        $(dataEntryPoint).append(noWorkspaceText);
+    },
+
+    ResultsFilteredRendering: function (piid, showLabel) {
+        var jugglPI = $('#' + piid)[0];
+        var label = $(jugglPI).find('[name=ResultsFilteredLabel]');
+        if ($(label).is(":visible") && showLabel == false) {
+            $(label).hide();
+        }
+        else if ($(label).is(":visible") == false && showLabel == true) {
+            $(label).show();
+        }
+    }
+}
+
+JUGGL.Media = {
+    processPlaceholders: function () {
+        if (JUGGL.IsConnected()) {
+            $("[name|='JugglMediaVideo'][data-status='inserted'],[name|='JugglMediaVideo'][data-status='unknown'],[name|='JugglMediaVideo'][data-status='processing']").each(function () {
+                var mediaId = $(this).attr("data-JugglMediaId");
+                eval("if (!window.jugglMediaStatusUpdater_" + mediaId.replaceAll("-", "") + ") {window.jugglMediaStatusUpdater_" + mediaId.replaceAll("-", "") + " = setInterval(function () { JUGGL.Media.updateProcessing('" + mediaId + "') }, 1000);}")
+            });
+        }
+    },
+    containsUnknownStatusOrProcessing: function (element) {
+        return $(element).find("[name|='JugglMediaVideo'][data-status='inserted'],[name|='JugglMediaVideo'][data-status='unknown'],[name|='JugglMediaVideo'][data-status='processing']");
+    },
+    updateProcessing: function (mediaId) {
+        $.getJSON("/sorce/Beacon/MediaManagement/videoStatus.ashx?id=" + mediaId, async function (json) {
+            var thejson = json;
+            var status = json.State;
+            var thumbnail = json.Thumbnail;
+            if (status == "Ready for playback") {
+                eval("clearInterval(window.jugglMediaStatusUpdater_" + mediaId.replaceAll("-", "") + ");window.jugglMediaStatusUpdater_" + mediaId.replaceAll("-", "") + " = '';");
+            }
+            var videoElementName = "JugglMediaVideo-" + mediaId;
+            var mediaElements = document.getElementsByName(videoElementName);
+            mediaElements.forEach(function (item) {
+                var theId = JUGGL.Media.generateUUID();
+                switch (status) {
+                    case "Ready for playback":
+                        //item.innerHTML = "<a id=\"playButton-" + theId + "\" href=\"JavaScript:void(null);\" onclick=\"JUGGL.Media.initVideo('" + theId + "')\" class=\"glyphicons play\" style=\"z-index: 999; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 80px; line-height: 1; \"></a><video class=\"azuremediaplayer amp-default-skin\" width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" onclick=\"JUGGL.Media.initVideo('" + theId + "')\" id=\"" + theId + "\" poster=\"" + thumbnail + "\"></video>";
+                        //item.innerHTML = "<a id=\"playButton-" + theId + "\" href=\"JavaScript:void(null);\" onclick=\"JUGGL.Media.initVideo('" + theId + "')\" class=\"glyphicons play\" style=\"z-index: 999; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 80px; line-height: 1; \"></a><img width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" onclick=\"JUGGL.Media.initVideo('" + theId + "')\" id=\"" + theId + "\" src=\"/sorce/beacon/MediaManagement/images/Video being processed.png\"></img>";
+                        item.innerHTML = "<a id=\"playButton-" + theId + "\" href=\"JavaScript:void(null);\" onclick=\"JUGGL.Media.initVideo('" + theId + "')\" class=\"glyphicons play\" style=\"z-index: 999; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 80px; line-height: 1; \"></a><img width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" onclick=\"JUGGL.Media.initVideo('" + theId + "')\" id=\"" + theId + "\" src=\"" + thumbnail + "\"></img>";
+
+                        $(item).data("status", "ready").attr("data-status", "ready");
+                        break;
+                    case "Processing":
+                        //item.innerHTML = "<span style=\"position: absolute; z-index: 999; background-color: #ffff; padding: 2px;\" name=\"status\">Pending</span><span name=\"percentage\" style=\"position: absolute;z-index: 999; background-color: #fff; padding: 2px; margin-top: 20px;\">" + json.TransformPercentage + "%</span><video class=\"azuremediaplayer amp-default-skin\" width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" poster=\"/sorce/beacon/MediaManagement/images/Video being processed.png\"></video>";
+                        //item.innerHTML = "<span style=\"position: absolute; z-index: 999; left: 50%; top: 30px; transform: translate(-50%, -50%); background-color: #ffff; padding: 10px; border-radius: 20px\" name=\"status\"><b><span>Video processing... </span><span name=\"percentage\">" + json.TransformPercentage + "%</span></b></span><img width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" src=\"/sorce/beacon/MediaManagement/images/Video being processed.png\"></img>"
+                        item.innerHTML = "<span style=\"position: absolute; z-index: 999; left: 50%; top: 30px; transform: translate(-50%, -50%); background-color: #ffff; padding: 10px; border-radius: 20px\" name=\"status\"><b><span>Video processing... </span><span name=\"percentage\">" + json.TransformPercentage + "%</span></b></span><img width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" src=\"" + thumbnail + "\"></img>"
+                        break;
+                    case "Queued":  
+                    case "Scheduled": 
+                        //item.innerHTML = "<span style=\"position: absolute; z-index: 999; left: 50%; top: 30px; transform: translate(-50%, -50%); background-color: #ffff; padding: 10px; border-radius: 20px\" name=\"status\"><b><span>Video queued for conversion... </span></b></span><img width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" src=\"/sorce/beacon/MediaManagement/images/Video being processed.png\"></img>"
+                        item.innerHTML = "<span style=\"position: absolute; z-index: 999; left: 50%; top: 30px; transform: translate(-50%, -50%); background-color: #ffff; padding: 10px; border-radius: 20px\" name=\"status\"><b><span>Video queued for conversion... </span></b></span><img width=\"100%\" data-JugglMediaId=\"" + mediaId + "\" src=\"" + thumbnail + "\"></img>"
+                        break;
+                    default:
+                    // code block
+                }
+            })
+        });        
+    },
+    cleanupForSave: function (element) {
+        // I'm not sure yet if we need this, but it's to make sure that the content saved by HTML regions contains only simple placeholders.
+        $(element).find("[name|='JugglMediaVideo']").each(function () {
+            JUGGL.Media.resetJugglMediaContainer(this);            
+        });
+    },
+    resetJugglMediaContainer: function (element) {
+        var outerElement = $(element);
+        outerElement.data("status", "inserted");
+        outerElement.html("");
+    },
+    initVideo: function (elementID) {
+        var video = document.getElementById(elementID);
+        var mediaId = $(video).attr("data-JugglMediaId");
+
+        var playButtonLink = document.getElementById("playButton-" + elementID);
+        playButtonLink.removeAttribute("onclick");
+        playButtonLink.setAttribute("href", "JavaScript:void(null);");
+        playButtonLink.className = "activitySpinner";
+
+        $.getJSON("/sorce/Beacon/MediaManagement/videoURL.ashx?id=" + mediaId, async function (json) {
+            video.removeAttribute("onclick");
+            document.getElementById("playButton-" + elementID).parentElement.removeChild(document.getElementById("playButton-" + elementID));
+            var thejson = json;
+            var URL = json.HLSEndpoint;
+            var iOSUrl = json.iOSStream;
+            //var token = json.Token;
+
+            const videoContainer = video.parentElement;
+            videoContainer.removeChild(video);
+
+            // 2. Prepare the player configuration
+            const playerConfig = {
+                ui: true,
+                key: "d0167b1c-9767-4287-9ddc-e0fa09d31e02",
+                playback: {
+                    muted: false,
+                    autoplay: true
+                },
+                // Subscribe to player events
+                events: {
+                    [mkplayer.MKPlayerEvent.Error]: (event) => {
+                        console.log("Encountered player error: ", JSON.stringify(event));
+                    },
+                    [mkplayer.MKPlayerEvent.TimeChanged]: (event) => {
+                        //console.log("Current player position: ", event.time);
+                    }
+                }
+            };
+
+            // 3. Initialize the player with video container and player configuration
+            let player = new mkplayer.MKPlayer(videoContainer, playerConfig);
+            player.on(mkplayer.MKPlayerEvent.SourceLoaded, (event) => {
+                console.log("Source loaded successfully!");
+            });
+
+            player.on(mkplayer.MKPlayerEvent.Ready, (event) => {
+                console.log("Player is ready for playback!");
+            });
+            const sourceConfig = {
+                //title: "Title for your source",
+                //description: "Brief description of your source",
+                hls: URL//,
+                //drm: {
+                //    clearkey: {
+                //        LA_URL: "HLS_AES",
+                //        headers: {
+                //            "Authorization": "Bearer=" + token
+                //        }
+                //    }
+                //}
+            };
+            player.load(sourceConfig)
+                .then(() => {
+                    // you can also get notified when subscribed to SourceLoaded event.
+                    console.log("Source loaded successfull!");
+                })
+                .catch((error) => {
+                    console.error("An error occurred while loading the source!");
+                });
+
+
+        });
+    },
+    initVideoAMP: function (elementID) {
+        var video = document.getElementById(elementID);
+        var mediaId = $(video).attr("data-JugglMediaId");
+        $.getJSON("/sorce/Beacon/MediaManagement/videoURL.ashx?id=" + mediaId, async function (json) {
+            video.removeAttribute("onclick");
+            document.getElementById("playButton-" + elementID).parentElement.removeChild(document.getElementById("playButton-" + elementID));
+            var thejson = json;
+            var URL = json.Endpoint;
+            var iOSUrl = json.iOSStream;
+            var token = json.Token;
+
+            if (['iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document)) {
+                video.src = iOSUrl;
+                video.setAttribute("controls", true);
+            }
+            else {
+                var myOptions = {
+                    autoplay: true,
+                    controls: true
+                };
+                var myPlayer = amp(elementID, myOptions);
+                myPlayer.src([{
+                    src: URL, type: "application/vnd.ms-sstr+xml", protectionInfo: [{
+                        type: "AES",
+                        authenticationToken: token
+                    }]
+                },]);
+            }                                        
+        });        
+    },
+    generateUUID: function () {
+        var array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        array[6] &= 0x0f;
+        array[6] |= 0x40;
+        array[8] &= 0x3f;
+        array[8] |= 0x80;
+        return JUGGL.Media.arrayToUUID(array);
+    },
+    arrayToUUID: function (array) {
+        var hex = Array.prototype.map.call(array, function (byte) {
+            return ('00' + byte.toString(16)).slice(-2);
+        }).join('');
+        return hex;
+    }
+}
+
+
+JUGGL.ApiCalls.init();
+
+$(document).on('BEACON:PAGE:ready', function () { JUGGL.Media.processPlaceholders(); });
+
+$(document).on("BEACON:PII:allUpdate", function () {
+    JUGGL.Media.processPlaceholders();
+});

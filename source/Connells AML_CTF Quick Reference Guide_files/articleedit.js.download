@@ -1,0 +1,110 @@
+//var URL = 'sorce/sorceLaunch.aspx?href=%2fsorce%2fapp_centre%2fdisplay_form.aspx%3ffhandle%3ds_news_edit_flat%'; Correct web page url
+
+var Article = Article || {}
+
+Article = {
+    delete: function (obj) {
+        var $mainObj = (obj).closest('[pi_type=News]');
+        var MainPIID = BEACON.page.pageItemInstanceByChild($mainObj).uniqueInstanceId; //PII ID
+        /*button template*/
+        var $obj = $(obj);
+        var postID = $obj.closest('[pi_type=News]').attr('ArticleID');
+        var button = function (css, text, action) {
+            return "<button type='button' class='dismissButton topMargin_large leftMargin_none " + css + " ' onclick='" + action + "'>" + text + "</button>";
+        };
+        var uniqueID = Math.floor((Math.random() * 10000000) + 1);
+        var dN = new BEACON.notifications.notification(uniqueID, BEACON.notifications.types.INTRUSIVE);
+        var dismissAction = "BEACON.notifications.UI.DismissIntrusiveNotification(" + uniqueID + "); ";
+
+        /*ensure the notification is dismissed on confirmation*/
+        var confirmAction = "Article.confirmDelete(" + postID + ",\"" + MainPIID + "\");";
+        var cancelAction = dismissAction;
+        confirmAction += dismissAction;
+
+        /*process actions*/
+        if (confirmAction !== "NONE") {
+            dN.NotificationDismissButtonActionOverride = confirmAction;
+        }
+        var buttons = "<div class='block'>" + button("confirmButton backgroundColourRed", BEACON.Labels.GetLabel("DELETE_ARTICLE_SCASE"), confirmAction)
+            + button("cancelButton backgroundColourGrey30 fontColourBlue ", BEACON.Labels.GetLabel("CANCEL_SCASE"), cancelAction) + "</div>";
+
+        dN.Stored = false;
+        dN.Sticky = false;
+        dN.NotificationTitle = BEACON.Labels.GetLabel("DELETE_ARTICLE_SCASE");
+        dN.BodyText = BEACON.Labels.GetLabel("DELETE_POST_DESCRIPTION_SCASE") + buttons;
+
+        CreateNotificationFromObject(dN);
+    },
+
+    confirmDelete: function (elem_id, MainPIID) {
+        var submitURL = '/sorce/beacon/PageItem/AppAspx/DeleteNews.aspx?elemid=' + elem_id;
+        var formData = new FormData();
+        var doneAction = function () {
+            location.replace('/sorce');
+        }
+        BEACON.xhrFormPost(submitURL, formData, doneAction, this)
+    },
+    toggleElement: function (objA, state) {
+        if (state === undefined)
+            state = false;
+        if (state === "False")
+            state = false;
+        if (state === "True")
+            state = true;
+
+        var $obj = $(objA);
+
+        //state should be boolean so lets show/hide sub elements based on state
+        $obj.find('> [status=' + state + ']').show();
+        $obj.find('> [status=' + !state + ']').hide();
+        //lets toggle any css classes
+        $obj.find('> [data-togglecss-' + state + ']').each(function () {
+            var $this = $(this);
+            //get the class to add and the class to remove
+            var addClass = $this.data('togglecss-' + state);
+            var removeClass = $this.data('togglecss-' + !state);
+            //if it doesn't have the addClass then add it
+            if (!$this.hasClass(addClass))
+                $this.addClass(addClass);
+            //if it has the removeClass then remove it
+            if ($this.hasClass(removeClass))
+                $this.removeClass(removeClass);
+        });
+        //if needs be lets toggle the title text on the link
+        $obj.prop('title', $obj.data('toggletitle-' + state));
+
+
+    },
+
+    toggleFavourite: function (obj) {
+        var $obj = $(obj);
+        var postID = $obj.closest('[pi_type=News]').attr('ArticleID');
+
+        var submitURL = '/sorce/beacon/PageItem/AppAspx/ToggleFavouriteNews.aspx?elemid=' + postID;
+        var formData = new FormData();
+        var doneAction = function (retVal) {
+            this.toggleElement(obj, retVal);
+        }
+        BEACON.xhrFormPost(submitURL, formData, doneAction, this)
+    },
+
+    init: function () {
+        //Load labels for notification
+        var labels = ["CANCEL_SCASE", "DELETE_ARTICLE_SCASE", "DELETE_POST_DESCRIPTION_SCASE"];
+        BEACON.GetLabelTextFromServer(labels, function (LabelData) {
+            BEACON.Labels.AddLabelsToCache(LabelData);
+        });
+    },
+
+       doneAction: function () {
+        $form.trigger('BEACON:WRKG:finish');
+        BEACON.page.pageItemInstanceById(MainPIID).reload();
+        BEACON.page.pageItemInstanceById(MainPIID).reload('postText,postImage');
+
+    }
+
+}
+
+$(document).on('BEACON:PAGE:ready', function () {
+    Article.init();
+});

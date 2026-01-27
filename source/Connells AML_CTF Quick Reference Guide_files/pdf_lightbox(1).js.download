@@ -1,0 +1,516 @@
+/* Upgrading PDFJS
+
+As of August 2024 this uses the ***legacy*** build to provide support for earlier iPhones.
+
+Replace all files in PDFJS folder with extracted contents of zip file
+
+
+Edit PDFJS/web/viewer.mjs 
+
+Set externalLinkTarget in base preferences in 2 (new tab)  - around line 5130
+
+class BasePreferences {
+  #defaults = Object.freeze({
+	//   
+   ==============> "externalLinkTarget": 2,
+   //
+*/
+
+
+const Engage_PDF_LightBox = (function () {
+	//set to true to output all actions to console
+	doDebug = false,
+
+		// root folder of this master script
+		ROOT_FOLDER = new URL(document.currentScript.src).pathname.replace(`/pdf_lightbox.js`, ``),
+		// banner text can be customised so fetch from server
+		GET_BANNER = `${ROOT_FOLDER}/aspx/GetBannerText.aspx`,
+		pdf_BannerFallbackText = `You are viewing a preview of this document, which may not accurately reproduce the original''s formatting.`,
+		bannerShown = true,
+
+		DELAYED_FILE = `The file is taking longer than normal to download.</p><p>If it doesn''t load soon, please refresh the page and try again`,
+		LOAD_ERROR = `An error occurred loading the preview. This is probably because you're using an old device with an unsupported browser or operating system.<br><br>Please try again using a modern browser, or try downloading the document`,
+
+		//cache busting once per user session
+		dtStamp = `v=${getSessionID()}`,
+		CUSTOM_CSS = `${ROOT_FOLDER}/css/viewer_custom_styles.css?${dtStamp}`,
+		PDF_VIEWER = `${ROOT_FOLDER}/PdfJs/web/viewer.html?${dtStamp}&file=`;
+
+
+	function getSessionID() {
+		//get a unique ID for a session to cache bust
+		let ss = sessionStorage.getItem('PDFSessionID');
+		if (ss != null)
+			return ss;
+		bannerShown = false;
+		ss = getRandomInt(10e9);
+		sessionStorage.setItem('PDFSessionID', ss);
+		return ss;
+	}
+
+	function loadCSSFile(head, filePath) {
+		//CSS
+		log(`loading ${filePath}`);
+		let css = document.createElement("link");
+		css.rel = "stylesheet";
+		css.href = filePath;
+		css.type = "text/css";
+		head.appendChild(css);
+	}
+
+	function log(msg) {
+		if (!doDebug) return;
+		if (window.console) console.log("Lightbox:- ", msg);
+	}
+
+
+	function bootStrapLightbox() {
+
+		log("loading lightbox");
+		//Load resources required for lightbox to run
+		getBannerText();
+
+		// handle document clicks
+
+		//TODO: Add keydown handler here as well for accessibility
+		document.addEventListener('click', handleDocumentClick);
+		$(document).on('BEACON:PII:allUpdate', processPage);
+
+		processPage();
+
+		processSPV();
+	}
+
+	function processSPV() {
+		// if a link's shared in an external location, it can't preview the PDF, so handleDoc redirects calls missing pdfPreview argument to load the SPV.
+		//if we land on a SPV, click the document's dmdr link
+		const h = document.location.href.toLowerCase();
+		//only continue if on a document SPV with the clickAction argument
+		if (h.indexOf('singlepageview.aspx') == -1 || h.indexOf('contenttype=documents') == -1 || h.indexOf('dmdaction=') == -1) return;
+
+		stripParam('dmdaction');
+		// click the document link if it exists
+		const l = document.querySelector('a.itemHeader[href*="/dmdr/"]');
+		if (!l) return;
+
+		l && viewSecuredDoc($(l));
+
+	}
+
+	function stripParam(pName) {
+		const url = new URL(location.href.toLowerCase());
+		url.searchParams.delete(pName.toLowerCase());
+		history.replaceState(null, null, url);
+	}
+
+	function handleDocumentClick(evt) {
+		const elem = evt.target;
+
+
+
+		//if called from mandatory read dialog, abort
+		if (elem.closest('div.notificationIntrusiveContainer')) {
+			log('Called from mandatory read dialog. Aborting');
+			return;
+		}
+
+
+		log('clicked:' + elem.outerHTML);
+		// this will either be the link 
+		if (isDocLink(elem)) {
+			evt.preventDefault();
+			startPDFViewing($(elem));
+		}
+		else {
+			//...or it will be a component of an A tag that might be
+			const pNode = elem.closest('a');
+			if (pNode && isDocLink(pNode)) {
+				evt.preventDefault();
+				startPDFViewing($(pNode));
+			}
+		}
+	}
+
+
+	function getBannerText() {
+
+		let getDoc = $.get(GET_BANNER, function (resp) {
+			if (resp && resp.length > 0)
+				pdf_BannerFallbackText = resp;
+		});
+
+		getDoc.fail(function () {
+			//nothing to do as have backup text available
+		});
+	}
+
+	function doViewPDF(options) {
+		// ensure we have JSON
+		if (typeof options != 'object') options = JSON.parse(decodeURIComponent(options));
+
+		if (options.isMandatory && !options.ignoreMandatory) {
+			docman_mandatory.intrusive(options);
+			return;
+		}
+		showPDFJS(options);
+	}
+
+	function showPDFJS(options) {
+
+		log(`showPDFJS: ${options.pathToPDF}`);
+		//some cache busting to ensure 404 files are refetched
+		const
+			randomSeed = `?v=${getRandomInt(1000000)}`,
+			fileToView = encodeURIComponent(options.pathToPDF + randomSeed),
+			html = `<iframe id="PDF_LightBox_Preview" class="PDF_LightBox_Preview" allowfullscreen style="max-width:100%" src="${PDF_VIEWER}${fileToView}"></iframe>`;
+
+		// show the lightbox
+		$.featherlight(html,
+			{
+				afterOpen: function () {
+					//remind user that this is a not-always perfect preview of the document
+					if (!bannerShown) {
+						informationalNotification(pdf_BannerFallbackText);
+						bannerShown = true;
+					}
+				}
+			}
+		);
+
+		//configure PDF viewer once loaded
+		const iPDF = top.document.getElementById("PDF_LightBox_Preview");
+		iPDF.contentDocument.body.onload = function () {
+			configurePDFViewer(options.downloadLink);
+		};
+	}
+
+
+	function configurePDFViewer(downloadLink) {
+
+		log('configuring PDF viewer');
+		const frm = top.document.querySelector("#PDF_LightBox_Preview"),
+			vDoc = frm.contentDocument,
+			head = vDoc.getElementsByTagName("head")[0],
+			pBody = vDoc.body,
+			toolbar = pBody.querySelector("#toolbarViewerRight");
+
+
+
+		// inject the client's custom styling
+		loadCSSFile(head, CUSTOM_CSS);
+
+
+		// the presentation mode button is moved, so need to ensure it's styled OK.		
+		s = document.createElement('style');
+		s.innerText = `#presentationMode::before {mask-image:var(--toolbarButton-presentationMode-icon)} `;
+		head.appendChild(s);
+
+		//make space for close button			
+		toolbar.style.marginRight = '30px';
+		pBody.querySelector('#secondaryToolbar').style.marginRight = '30px';
+
+		// hide unwanted controls
+		[...pBody.querySelectorAll('#editorModeButtons,#editorModeSeparator,#secondaryOpenFile,#scrollModeButtons,#spreadModeButtons,#viewBookmark,#viewBookmarkSeparator,#scrollModeButtons + .horizontalToolbarSeparator,#spreadModeButtons + .horizontalToolbarSeparator,#imageAltTextSettings + .horizontalToolbarSeparator')].forEach(c => c.style.display = 'none');
+
+
+		//show the presentation mode button next to the print button
+		const pm = pBody.querySelector('#presentationMode');
+		pm.className = 'toolbarButton';
+		pm.querySelector('span').style.display = 'none';
+		// bug in Andoird app rotates screen, so don't show there!
+		if (window.navigator.userAgent == 'EngageMobileApp Android')
+			pm.style.display = 'none';
+		else
+			pBody.querySelector('#printButton').before(pm);
+
+
+		// override the download button so it fires Engage code, which will return the original document rather than the PDF preview
+		let cmdDownload = pBody.querySelector('#downloadButton'),
+			aDownload = document.createElement('A');
+		cmdDownload.style.display = 'none';
+		aDownload.classList = cmdDownload.classList;
+		aDownload.classList.remove('hiddenMediumView');
+
+		if (!downloadLink || downloadLink == "") return;
+		const dlScript = `
+		const a = top.document.createElement('A');
+		a.download="";
+		a.href = '${downloadLink.replace("source=1", "source=pdfViewer")}';
+		top.document.body.appendChild(a);
+		a.click();a.remove();`;
+
+
+		aDownload.href = 'javascript:void(null)';
+		aDownload.setAttribute('onclick', dlScript);
+		aDownload.id = 'downloadButton';
+		aDownload.title = "Download original document";
+		cmdDownload.before(aDownload);
+
+		// the overflow menu has a _separate_ button, FFS!
+		let secDownload = pBody.querySelector('#secondaryDownload');
+		secDownload.classList = '';
+		secDownload.style.display = 'none';
+
+
+		//hide the page numbering
+		pBody.querySelector('#pageNumber').closest('div').classList.add('hiddenSmallView');
+		//ensure presentation mode block is show
+		pBody.querySelector('#printButton').closest('div').classList.remove('hiddenMediumView');
+
+
+		top.document
+			.querySelector(".featherlight-close-icon.featherlight-close")
+			.setAttribute("title", "Close the preview (Esc key)");
+
+	}
+
+
+	function startPDFViewing($a) {
+		log('About to view' + $a.attr('href'));
+		const h = $a.attr('href').toLowerCase();
+		if (h.indexOf('/dmd/') != -1 || h.indexOf('/dmdr/') != -1)
+			viewSecuredDoc($a);
+		else
+			viewPDFDirectly($a);
+	}
+
+
+	function viewPDFDirectly($a) {
+		// should now be a direct link to a PDF. Sanity check
+		const h = $a.attr('href').toLowerCase();
+		log(`View direct:${h}`);
+		log(h.substring(h.length - 4));
+		if ((h.indexOf('/fileuploads/') == -1 && h.indexOf("/uploads/") == -1) || h.substring(h.length - 4) != '.pdf') return;
+		showPDFJS({
+			pathToPDF: h,
+			downloadLink: h
+		});
+	}
+
+	function viewSecuredDoc($a, docLink, callback) {
+
+		// this function is called from docman_mandatory, which has its own handler for the result. Public function getDocAvailability exposes ths function
+
+		log('Viewing secured document');
+		const h = (docLink ? docLink : $a.attr('href')) + '?pdfLightbox=1';
+		$.getScript(h, function (scr, status) {
+
+		});
+
+
+
+	}
+
+
+	function processPage() {
+		// don't show the native "Preview" link in document menus
+		$links = $("a");
+		$links.filter('[onclick^="docmanAPI.document.preview"]')
+			.each(function () {
+				this.style.display = 'none';
+			});
+		//ensure all links open in the current window, and stop the right click menu being shown
+		$links.filter(function () {
+			const h = this.href;
+			return h && h.indexOf('/view/') != -1 && (h.indexOf('/dmdr/') != -1 || h.indexOf('/dmd/') != -1);
+		}).removeAttr('target').attr("oncontextmenu", "Engage_PDF_LightBox.openDocMenu(this);return false");
+	}
+
+
+	function doOpenDocMenu(clickedElem) {
+		//attempt to open the associated menu for a document
+		const
+			art = clickedElem.closest('article');
+		if (!art) return;
+		const menuLink = art.querySelector('a.actionMenuToggleLink');
+		menuLink && menuLink.click();
+	}
+
+	function isDocLink(elem) {
+		log(elem.closest('a'));
+		if (!elem.tagName || elem.tagName != 'A') return false;
+
+		// we now have only 'A' tags. They should be dmd or dmdr links
+		if (!elem.href) return false;
+		const h = elem.href.toLowerCase();
+		log(`Checking ${h}`);
+
+
+		// not pointing at this domain? FAIL! regardless of whether it's actually the same install
+		const U = new URL(h);
+		if (U.hostname != window.location.hostname) return false;
+		log('same domain');
+
+		// specifically not requesting a PDF version?
+		if (h.indexOf('pdfpreview=0') != -1) return false;
+
+		//if it's a PDF document stored in an app, try it!
+		if (h.indexOf('/sorce/apps/') != -1 && h.slice(-4).toLowerCase() == '.pdf') return true;
+
+
+		//must be a beacon link
+		if (h.indexOf('/sorce/beacon/') == -1) return false;
+		log(`Is Beacon link`);
+
+		//must be a document shortcut
+		if (h.indexOf('/dmdr/') == -1 && h.indexOf('/dmd/') == -1) return false;
+
+		log('Is dmdr or dmd link');
+		//must be a link to view
+		// if (h.indexOf('/view/') == -1) return false;
+
+
+		//might have already been proceseed and now have preview disabled
+		if (elem.hasAttribute('pdfPreview') && elem.getAttribute('pdfPreview') == 0) return false;
+
+		log('is view link');
+		return true;
+	}
+
+
+
+	function getRandomInt(max) {
+		return Math.floor(Math.random() * max);
+	}
+
+	return {
+		bootStrap: bootStrapLightbox,
+		getSecureDoc: viewSecuredDoc,
+		viewPDF: doViewPDF,
+		openDocMenu: doOpenDocMenu
+	};
+})();
+
+// mandatory read code needs to be available everywhere, so imported from docman_mandatory and that file cleared
+const docman_mandatory = {
+
+	downloadDoc(pathToFile) {
+		const a = document.createElement('a');
+		a.href = pathToFile;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+	},
+
+	intrusive: function (options) {
+		// add this value to stop a loop in PDF viewing
+		options.ignoreMandatory = true;
+
+
+		// const chkClasses = 'glyphicons actionIcon iconSize_small colourChecked_0 rightMargin_small' + options.cssClass,
+		const chkClasses = 'glyphicons actionIcon iconSize_small colourChecked_0 rightMargin_small',
+			uniqueID = Math.floor((Math.random() * 10000000) + 1),
+			fnc = (options.pathToPDF.endsWith('.pdf') ? `Engage_PDF_LightBox.viewPDF('${encodeURIComponent(JSON.stringify(options))}')` : `docman_mandatory.downloadDoc("${options.downloadLink}")`) + `;docman_mandatory.enableConfirmMandatoryRead(this);`,
+			dismissButtonAction = "BEACON.notifications.UI.DismissIntrusiveNotification('" + uniqueID + "');docman_mandatory.refreshMandatoryReadPageItems();";
+
+
+		const uNot = new BEACON.notifications.notification(uniqueID, BEACON.notifications.types.INTRUSIVE);
+		uNot.Stored = false;
+		uNot.Sticky = false;
+		uNot.DbSeen = false;
+		uNot.NotificationTitle = "Document mandatory read!";
+		uNot.NotificationIcon = options.cssClass;
+		uNot.NotificationImage = "";
+		uNot.BodyText = "This document is a mandatory read document.<br/>";
+		uNot.BodyText += "Click below to open the document and tick the box to confirm that you have read the document.<br/><br/>";
+
+		if (options.pathToPDF && options.pathToPDF.endsWith('.pdf'))
+			uNot.BodyText += `<a href='javascript:void(null)' onclick="${fnc}">${options.title}</a><br/><br/>`;
+		else
+			uNot.BodyText += `<a href='javascript:void(null)' onclick="docman_mandatory.downloadDoc('${encodeURIComponent(options.downloadLink)}');docman_mandatory.enableConfirmMandatoryRead(this);">${options.title}</a><br/><br/>`;
+
+		uNot.BodyText += `<span href='JavaScript:void(null);' onclick='docman_mandatory.showReadMsg(this);' class='${chkClasses} checked_False'></span>`;
+		uNot.BodyText += `<span href='JavaScript:void(null);' style='display:none;' onclick='docman_mandatory.confirmMandatoryRead(this, ${options.revID}, 0)' class='${chkClasses} mrToggle checked_False'></span>`;
+		uNot.BodyText += `<span href='JavaScript:void(null);' style='display:none;' onclick='docman_mandatory.confirmMandatoryRead(this, ${options.revID}, 1)' class='${chkClasses} mrToggle checked_True' ></span>`;
+		uNot.BodyText += `I agree that I have read the document in its entirety.</br>`;
+		uNot.BodyText += `<span class='readMsg' style='display:none;color:#d81122;'>Please open the document first by clicking the link above.</span>`;
+		uNot.NotificationDismissButtonText = 'Close';
+		uNot.NotificationDismissButtonActionOverride = dismissButtonAction;
+
+
+		CreateNotificationFromObject(uNot);
+		// });
+	},
+
+	refreshMandatoryReadPageItems() {
+		// mandatory read dialog could have been initiated from anywhere, so refresh any MR page items
+		[...document.querySelectorAll('div.mandatoryRead[data-pageitemtype]')].forEach((spi) => {
+			BEACON.page.pageItemInstanceByChild(spi).reload();
+		});
+		// if on a doc SPV, also refresh
+		const sp = new URLSearchParams(document.location.search.toLowerCase());
+		if (sp.get("contenttype") && sp.get("contenttype") == "documents")
+			[...document.querySelectorAll('div.singlePage')].forEach((spi) => {
+				BEACON.page.pageItemInstanceByChild(spi).reload();
+			});
+	},
+
+	confirmMandatoryRead: function (obj, sd_rev_id, checked) {
+
+		const chkRead = obj.closest('p').querySelector('span.mrToggle.checked_True'),
+			chkUnread = obj.closest('p').querySelector('span.mrToggle.checked_False');
+
+		BEACON.xhrGet(
+			"/sorce/Beacon/PageItem/AppAspx/docmanMarkAsRead.aspx?sd_rev_id=" + sd_rev_id,
+			function (isRead) {
+
+
+				// $(jQuery(obj)).toggle()
+				if (isRead == 1) {
+					chkRead.style.display = 'inline';
+					chkUnread.style.display = 'none';
+				}
+				else {
+					chkRead.style.display = 'none';
+					chkUnread.style.display = 'inline';
+				}
+
+			}
+		);
+	},
+
+	viewDoc(linkToDoc, originalLink, clickedLink) {
+
+		if (linkToDoc.toLowerCase().endsWith('.pdf') && originalLink.indexOf('/view/') != -1) {
+			console.log('using PDF lightbox');
+			Engage_PDF_LightBox.viewPDF(linkToDoc, $(clickedLink));
+		}
+		else {
+			// window.open(linkToDoc);
+			const a = document.createElement('A');
+			a.href = originalLink + '&pdfPreview=0';
+			// a.target = '_blank';
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+		}
+	},
+
+
+	enableConfirmMandatoryRead: function (clickedElem) {
+
+		if (clickedElem.hasAttribute('toggled')) return;
+		$(clickedElem).siblings('span.checked_False').toggle().siblings('.readMsg').hide();
+		clickedElem.setAttribute('toggled', 1);
+
+	},
+
+	showReadMsg: function (obj) {
+		$(jQuery(obj)).siblings('.readMsg').show();
+
+	},
+	downloadDoc: function (encodedLink) {
+		docLink = decodeURIComponent(encodedLink);
+
+
+		const a = top.document.createElement('A');
+		a.href = `${docLink.replace("source=1", "source=pdfViewer")}`;
+		top.document.body.appendChild(a);
+		a.click();
+		a.remove();
+
+	}
+};
+
+//as soon as the page is ready, bootstrap the lightbox code
+$(document).on('BEACON:PAGE:ready', Engage_PDF_LightBox.bootStrap);

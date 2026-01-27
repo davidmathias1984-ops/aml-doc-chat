@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AML/CTF Guide Chat</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>AML/CTF Quick Reference Chat</h1>
+      <p class="sub">Ask questions. Answers come only from the guide.</p>
+    </header>
+
+    <section id="chat" class="chat"></section>
+
+    <form id="form" class="composer">
+      <input id="q" type="text" placeholder="Ask a question…" />
+      <button type="submit">Send</button>
+    </form>
+
+    <footer class="footer">
+      <small>Powered by document-based AI</small>
+    </footer>
+  </main>
+
+  <script>
+    window.CHAT_API_BASE = "https://YOUR-WORKER.your-subdomain.workers.dev";
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>

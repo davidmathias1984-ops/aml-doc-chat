@@ -1,0 +1,121 @@
+/* This file contains CSS for the feathrlight viewer */
+/* This is the out of the box style. Add client overrides to viewer_custom_styles.css  */
+
+:root {
+  --EngageBannerHeight: 91px;
+  --LightBoxZIndex: 1000;
+  --FeatherlightMargin: 10px;
+  --ToolbarItemHeight: 28px;
+  
+  /* Close icon needs to match opacity of other toolbar icons. Copied from viewer.css */
+  --toolbar-icon-opacity: 0.7; 
+  --button-hover-color:#000;
+  --toolbar-icon-hover-bg-color:rgb(221 222 223);
+  --main-color:rgb(249 249 250);
+}
+
+@media screen and (max-width:899px) {
+  :root {
+    --EngageBannerHeight: 45px;
+  }
+}
+
+@media screen and (max-width:899px) and (orientation:portrait) {
+  :root {
+    --EngageBannerHeight: 35px;
+  }
+}
+
+
+.featherlight .featherlight-content {
+  border: 1px solid #000;
+}
+
+
+.featherlight.featherlight-iframe {
+  /* standard height of header is 90px */
+  top: var(--EngageBannerHeight);
+}
+
+.featherlight.featherlight-iframe::before {
+  /* remove the slight padding so the lightbox sits directly below the site menus */
+  content: none;
+}
+
+.featherlight .featherlight-content {
+  border-radius: 7px;
+  margin-left: var(--FeatherlightMargin);
+  margin-right: var(--FeatherlightMargin);
+  max-height: calc(99vh - var(--EngageBannerHeight));
+  margin-bottom: var(--FeatherlightMargin);
+  overflow: hidden;
+}
+
+.featherlight .featherlight-close-icon {
+  /* set to match icons in the viewer */
+  line-height: var(--ToolbarItemHeight);
+  height: var(--ToolbarItemHeight);
+  width: var(--ToolbarItemHeight);
+  margin-top: 2px;
+  font-size: 1rem;
+  font-weight: 700;
+  right: 2px;
+  border-radius: 2px;
+  opacity: var(--toolbar-icon-opacity);
+}
+
+.featherlight .featherlight-close-icon:hover {
+  color: var(--button-hover-color);
+  background-color: var(--toolbar-icon-hover-bg-color);
+}
+
+.featherlight-close-icon.featherlight-close,
+.featherlight .featherlight-inner {
+  background-color: var(--ToolbarColor);
+  color: var(--toolbar-icon-bg-color);
+}
+
+
+@media (prefers-color-scheme: dark){
+  .featherlight .featherlight-close-icon {
+    color: var(--main-color);
+  }
+
+}
+
+/* drop lightboxe's z-index a little */
+.featherlight {
+  z-index: calc(var(--LightBoxZIndex) - 1);
+}
+
+.featherlight:last-of-type {
+  /* just float above the page */
+  background-color: transparent;
+}
+
+
+@media only screen and (max-width: 1024px) {
+  .featherlight .featherlight-content {
+    margin-left: 0;
+    margin-right: 0;
+    max-height: 98%;
+    padding: 0;
+
+  }
+}
+
+.NavLoadHidden,
+.PrimaryNav .Nav_LI,
+.DesktopPrimaryNav>.PrimaryNav .Nav_LI>div>.Nav_SubUL {
+  /* so that Engage controls can be shown */
+  z-index: var(--LightBoxZIndex);
+}
+
+
+#PDF_LightBox_Preview {
+  width: calc(100vw - 20px);
+  max-width: 2100px;
+  height: calc(100vh - var(--EngageBannerHeight));
+  margin: 0 auto;
+
+}

@@ -1,0 +1,445 @@
+﻿var MediaLibrary = {
+    GetSubCategories: function (elem) {
+        elem.delayFilter();
+        elem = $("#" + elem.uniqueInstanceId)[0];
+        var categorySelect1 = $(elem).find('.mediaLibCategorySelect').first().find('select')[0];
+        var categorySelect2 = $(elem).find('.mediaLibCategory2Select').first().find('select')[0];
+        MediaLibrary.ResetCategory(categorySelect2);
+        var categorySelect3 = $(elem).find('.mediaLibCategory3Select').first().find('select')[0];
+        MediaLibrary.ResetCategory(categorySelect3);
+        var categorySelect4 = $(elem).find('.mediaLibCategory4Select').first().find('select')[0];
+        MediaLibrary.ResetCategory(categorySelect4);
+        categoryId = categorySelect1.value;
+        var SaveJSONObj = { "categoryId": categoryId };
+
+        var ashxURL = "/sorce/Beacon/PageItem/AppAspx/GetMediaSubCategories.ashx";
+        $.ajax({
+            url: ashxURL
+            , method: 'POST'
+            , dataType: 'json'
+            , contentType: 'application/json; charset=utf-8'
+            , data: JSON.stringify(SaveJSONObj)
+            , complete: function (data) {
+
+                MediaLibrary.FilterCategoryLookups(data, categorySelect2);
+            }
+            , error: function (error) {
+            }
+        });
+    },
+
+    GetSubCategoriesLevel2: function (elem) {
+        //Do the full save ASH
+        elem.delayFilter();
+        elem = $("#" + elem.uniqueInstanceId)[0];
+        var categorySelect2 = $(elem).find('.mediaLibCategory2Select').first().find('select')[0];
+        var categorySelect3 = $(elem).find('.mediaLibCategory3Select').first().find('select')[0];
+        MediaLibrary.ResetCategory(categorySelect3);
+        var categorySelect4 = $(elem).find('.mediaLibCategory4Select').first().find('select')[0];
+        MediaLibrary.ResetCategory(categorySelect4);
+        categoryId = categorySelect2.value;
+        var SaveJSONObj = { "categoryId": categoryId };
+
+        var ashxURL = "/sorce/Beacon/PageItem/AppAspx/GetMediaSubCategories.ashx";
+        $.ajax({
+            url: ashxURL
+            , method: 'POST'
+            , dataType: 'json'
+            , contentType: 'application/json; charset=utf-8'
+            , data: JSON.stringify(SaveJSONObj)
+            , complete: function (data) {
+
+                MediaLibrary.FilterCategoryLookups(data, categorySelect3);
+            }
+            , error: function (error) {
+            }
+        });
+    },
+
+    GetSubCategoriesLevel3: function (elem) {
+        //Do the full save ASHX
+        elem.delayFilter();
+        elem = $("#" + elem.uniqueInstanceId)[0];
+        var categorySelect3 = $(elem).find('.mediaLibCategory3Select').first().find('select')[0];
+        var categorySelect4 = $(elem).find('.mediaLibCategory4Select').first().find('select')[0];
+        MediaLibrary.ResetCategory(categorySelect4);
+        categoryId = categorySelect3.value;
+        var SaveJSONObj = { "categoryId": categoryId };
+
+        var ashxURL = "/sorce/Beacon/PageItem/AppAspx/GetMediaSubCategories.ashx";
+        $.ajax({
+            url: ashxURL
+            , method: 'POST'
+            , dataType: 'json'
+            , contentType: 'application/json; charset=utf-8'
+            , data: JSON.stringify(SaveJSONObj)
+            , complete: function (data) {
+
+                MediaLibrary.FilterCategoryLookups(data, categorySelect4);
+            }
+            , error: function (error) {
+            }
+        });
+    },
+
+    SetCategoryOptions: function (elem) {
+        var SelectID = $(elem).attr('id');
+        $('#' + SelectID).data('options', $('#' + SelectID + ' option').detach());
+    },
+
+    ResetCategory: function (elem) {
+        var SelectID = $(elem).attr('id');
+        var $options = $('#' + SelectID).data('options');
+        $('#' + SelectID).empty().append($options.filter("[value|='']"));
+    },
+
+    ResetCategoriesOnLoad: function (elem) {
+        var categorySelect2 = $(elem).find('.mediaLibCategory2Select').first().find('select')[0];
+        this.SetCategoryOptions(categorySelect2);
+        this.ResetCategory(categorySelect2);
+        var categorySelect3 = $(elem).find('.mediaLibCategory3Select').first().find('select')[0];
+        this.SetCategoryOptions(categorySelect3);
+        this.ResetCategory(categorySelect3);
+        var categorySelect4 = $(elem).find('.mediaLibCategory4Select').first().find('select')[0];
+        this.SetCategoryOptions(categorySelect4);
+        this.ResetCategory(categorySelect4);
+    },
+
+    FilterCategoryLookups: function (data, selects) {
+        var categoryListMinusBraces = data.responseText.substring(1, data.responseText.length - 1);
+        var categoryWhiteList = categoryListMinusBraces.split(',');
+        var SelectID = $(selects).attr('id');
+        var $options = $('#' + SelectID).data('options');
+        for (var counter = 0; $options.length > counter; counter++) {
+            if (categoryWhiteList.indexOf($options[counter].value) != -1 || $options[counter].value == "") {
+                $('#' + SelectID).append($options[counter]);
+            }
+        }
+        selects.selectedIndex = 0;
+    },
+
+    ShowMobileMediaCategories: function (obj) {
+        var $mediaLibraryCategoriesPopup = $(obj).closest('.liveFiltersContainer').find('.mediaLibCat');
+        $mediaLibraryCategoriesPopup.first().attr("style", "display:flex;");
+    },
+
+    addImage: function (obj) {
+        let apiURL = "/sorce/api/images/posted_file";
+        let $form = $(obj).closest('form');
+        let $fileInput = $form.find('input[type=file]');
+        let files = $fileInput.prop('files');
+
+
+        if (files.length === 0) {
+            $form.trigger('BEACON:WRKG:finish');
+            return;
+        }
+
+        let fileName = files[0].name;
+        let fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
+
+        /* define notification functions and variables*/
+        var progressNotificationId = Math.floor((Math.random() * 10000000) + 1);
+        var fireErrorNotification = function (notificationTitle, notificationBody) {
+            var uniqueId = Math.floor((Math.random() * 10000000) + 1);
+            var bNot = new BEACON.notifications.notification(uniqueId, BEACON.notifications.types.INTRUSIVE);
+            bNot.Sticky = true;
+            bNot.Stored = false;
+            bNot.NotificationIcon = 'contentIcon br_icons br_exclaim_round iconSize_large topMargin_small';
+            bNot.NotificationTitle = notificationTitle;
+            bNot.BodyText = notificationBody;
+
+            bNot.NotificationDismissButtonText = "OK";
+            CreateNotificationFromObject(bNot);
+        }
+
+        var fireInfoNotification = function (notificationTitle, notificationBody) {
+            var uniqueId = Math.floor((Math.random() * 10000000) + 1);
+            var bNot = new BEACON.notifications.notification(uniqueId, BEACON.notifications.types.INFORMATIONAL);
+            bNot.Sticky = false;
+            bNot.Stored = false;
+            bNot.NotificationIcon = 'glyphicons info-sign iconSize_large rightMargin_large topMargin_small floatLeft';
+            bNot.NotificationTitle = notificationTitle;
+            bNot.BodyText = notificationBody;
+
+            bNot.NotificationDismissButtonText = "OK";
+            CreateNotificationFromObject(bNot);
+        }
+        /*updates the progress notifcation */
+        var updateProgressNotification = function (e, uniqueId) {
+            if (e.lengthComputable) {
+                if (e.loaded !== e.total) {
+                    //Function to update the progress upload notification, the temp id fetches the correct notificaiton (incase there is more than one!).
+                    //The function also requires the progress information from the POST request (e).
+                    var bNot = BEACON.notifications.CORE.NotificationObjectById(uniqueId);
+                    bNot.Type = BEACON.notifications.types.INFORMATIONAL;
+                    BEACON.notifications.UI.UpdateNotificationsWithNewData = true;
+                    bNot.PercentageText = ''.concat(e.calculated.currentAmount.toFixed(2), e.calculated.unit, " / ", e.calculated.totalAmount.toFixed(2), e.calculated.unit);
+                    bNot.PercentageValue = e.calculated.percentage;
+                    CreateNotificationFromObject(bNot);
+                }
+            }
+        }
+
+        /*generate progress notification ready for upload */
+        var progressNotification = new BEACON.notifications.notification(progressNotificationId, BEACON.notifications.types.INFORMATIONAL);
+        progressNotification.Sticky = true;
+        progressNotification.Stored = false;
+        progressNotification.NotificationIcon = 'contentIcon br_icons br_' + fileExtension + ' iconSize_large bottomMargin_large topMargin_small';
+        progressNotification.PercentageTracker = true;
+        progressNotification.PercentageValue = 5;
+        progressNotification.NotificationTitle = fileName;
+        CreateNotificationFromObject(progressNotification);
+        /*Attach file for upload */
+        let formData = new FormData();
+        formData.append("image", files[0]);
+
+        BEACON.xhrFormPost(apiURL, formData, function (retVal) {
+            retVal = JSON.parse(retVal);
+            if (retVal.success == true) {
+                fireInfoNotification(BEACON.Labels.GetLabel("IMAGE_SCASE"), BEACON.Labels.GetLabel("IMAGE_UPLOAD_COMPLETE_SCASE"));
+                /*once upload is complete refresh the image picker area*/
+                var imagePickerPageItemInstanceId = $form.closest('.mediaLibPopup').find('.imagePickerArea').prop('id');
+                BEACON.page.pageItemInstanceById(imagePickerPageItemInstanceId).delayFilter();
+                /*clear the file input (works in chromium and firefox July 2022)*/
+                $fileInput.val('');
+                /*Now lets hide the working message*/
+                $form.trigger('BEACON:WRKG:finish');
+            } else {
+                fireErrorNotification(BEACON.Labels.GetLabel("IMAGE_SCASE"), BEACON.Labels.GetLabel("AN_ERROR_OCCURRED_WHILST_UPLOADING_THE_FILE__SCASE"));
+                console.log('image upload had an error, check Elmah.', retVal.message);
+                $form.trigger('BEACON:WRKG:finish');
+            }
+        }, this,
+            updateProgressNotification, progressNotificationId,
+            function (e, dismissId) {
+                BEACON.notifications.UI.DismissNotification(dismissId);
+            },
+            progressNotificationId
+        );
+    },
+
+    fireErrorNotification: function (notificationTitle, notificationBody) {
+        var uniqueId = Math.floor((Math.random() * 10000000) + 1);
+        var bNot = new BEACON.notifications.notification(uniqueId, BEACON.notifications.types.INTRUSIVE);
+        bNot.Sticky = true;
+        bNot.Stored = false;
+        bNot.NotificationIcon = 'contentIcon br_icons br_exclaim_round iconSize_large topMargin_small';
+        bNot.NotificationTitle = notificationTitle;
+        bNot.BodyText = notificationBody;
+
+        bNot.NotificationDismissButtonText = "OK";
+        CreateNotificationFromObject(bNot);
+    },
+
+    fireInfoNotification: function (notificationTitle, notificationBody) {
+        var uniqueId = Math.floor((Math.random() * 10000000) + 1);
+        var bNot = new BEACON.notifications.notification(uniqueId, BEACON.notifications.types.INFORMATIONAL);
+        bNot.Sticky = false;
+        bNot.Stored = false;
+        bNot.NotificationIcon = 'glyphicons info-sign iconSize_large rightMargin_large topMargin_small floatLeft';
+        bNot.NotificationTitle = notificationTitle;
+        bNot.BodyText = notificationBody;
+
+        bNot.NotificationDismissButtonText = "OK";
+        CreateNotificationFromObject(bNot);
+    },
+    getFilterValue: function(filters, names) {
+
+        for (let name of names) {
+
+            let filter = filters.find(x => x.FilterName === name);
+
+            if (typeof filter != 'undefined') {
+
+                return filter.FilterValue;
+            }
+        }
+        return "-1"; // Default value if none of the FilterNames are found
+    },
+    addMultipleImages: function (elem) {
+        let $form = $(elem).closest('form');
+        let $fileInput = $form.find('input[type=file]');
+        let files = $fileInput.prop('files');
+        var $PIIObj = $(elem).closest('.pi.engage_gallery');
+        var PIID = BEACON.page.pageItemInstanceByChild($PIIObj).uniqueInstanceId;
+        var filters = BEACON.page.pageItemInstanceByChild($PIIObj).activeFilters;
+        let invalidFiles = "";
+        // Example usage:
+        var category1 = MediaLibrary.getFilterValue(filters, ['100', '885']);
+        var category2 = MediaLibrary.getFilterValue(filters, ['766', '886']);
+        var category3 = MediaLibrary.getFilterValue(filters, ['767', '887']);
+        var category4 = MediaLibrary.getFilterValue(filters, ['768', '888']);
+        var categoryID = (typeof filters.find(x => x.FilterName === '883') != 'undefined') ? filters.find(x => x.FilterName === '883').FilterValue : "-1";
+        
+
+
+     /*   var category1 = (typeof filters.find(x => x.FilterName === '100') != 'undefined') ? filters.find(x => x.FilterName === '100').FilterValue : "-1";
+        var category2 = (typeof filters.find(x => x.FilterName === '766') != 'undefined') ? filters.find(x => x.FilterName === '766').FilterValue : "-1";
+        var category3 = (typeof filters.find(x => x.FilterName === '767') != 'undefined') ? filters.find(x => x.FilterName === '767').FilterValue : "-1";
+        var category4 = (typeof filters.find(x => x.FilterName === '768') != 'undefined') ? filters.find(x => x.FilterName === '768').FilterValue : "-1";
+        var categoryID = (typeof filters.find(x => x.FilterName === '100') != 'undefined') ? filters.find(x => x.FilterName === '100').FilterValue : "-1";*/
+
+        if (files.length == 0) {
+            MediaLibrary.fireErrorNotification(BEACON.Labels.GetLabel("IMAGE_SCASE"), $PIIObj.find(".choose_image_label").html());
+            $form.trigger('BEACON:WRKG:finish');
+            $(element).closest('.pi').find('.inlineAddContainer').slideToggle();
+            return;
+        }
+
+        top.MediaLibraryMultipleUploader = {
+            theForm: $form,
+            element: elem,
+            theInput: $fileInput,
+            allFiles: files,
+            currentFile: 0,
+            multipleProgressNotificationID: Math.floor((Math.random() * 10000000) + 1),
+            activeFilters: filters,
+            cat1: category1,
+            cat2: category2,
+            cat3: category3,
+            cat4: category4,
+            catID: categoryID,
+            pageItemInstanceID: PIID
+        }
+
+        var progressNotification = new BEACON.notifications.notification(top.MediaLibraryMultipleUploader.multipleProgressNotificationID, BEACON.notifications.types.INFORMATIONAL);
+        progressNotification.Sticky = true;
+        progressNotification.Stored = false;
+        progressNotification.PercentageTracker = true;
+        progressNotification.PercentageValue = 0;
+        progressNotification.NotificationTitle = "Uploading images...";
+        progressNotification.NotificationIcon = '';
+        CreateNotificationFromObject(progressNotification);
+        MediaLibrary.uploadNextImage(invalidFiles);
+        
+    },
+    uploadNextImage: function (invalidFiles) {
+        let CurrentInvalidFiles = invalidFiles;
+        var apNot = BEACON.notifications.CORE.NotificationObjectById(top.MediaLibraryMultipleUploader.multipleProgressNotificationID);
+        apNot.Type = BEACON.notifications.types.INFORMATIONAL;
+        BEACON.notifications.UI.UpdateNotificationsWithNewData = true;
+        apNot.PercentageText = ''.concat(top.MediaLibraryMultipleUploader.currentFile, " / ", top.MediaLibraryMultipleUploader.allFiles.length);
+        apNot.PercentageValue = Math.round((top.MediaLibraryMultipleUploader.currentFile / top.MediaLibraryMultipleUploader.allFiles.length) * 100);
+        CreateNotificationFromObject(apNot);
+
+        if (top.MediaLibraryMultipleUploader.currentFile + 1 <= top.MediaLibraryMultipleUploader.allFiles.length) {
+            var i = top.MediaLibraryMultipleUploader.currentFile;
+            var form = top.MediaLibraryMultipleUploader.theForm;
+            var element = top.MediaLibraryMultipleUploader.element;
+            var fileInput = top.MediaLibraryMultipleUploader.theInput;
+            var files = top.MediaLibraryMultipleUploader.allFiles;
+            var category1 = top.MediaLibraryMultipleUploader.cat1;
+            var category2 = top.MediaLibraryMultipleUploader.cat2;
+            var category3 = top.MediaLibraryMultipleUploader.cat3;
+            var category4 = top.MediaLibraryMultipleUploader.cat4;
+            var categoryID = top.MediaLibraryMultipleUploader.catID;
+            var PIID = top.MediaLibraryMultipleUploader.pageItemInstanceID;
+
+            var progressNotificationId = Math.floor((Math.random() * 10000000) + 1);
+
+            let fileName = files[i].name;
+            let fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
+            var fileFormData = new FormData();
+
+            fileFormData.append(fileName, top.MediaLibraryMultipleUploader.allFiles[i]);
+            fileFormData.append("progressNotificationId", progressNotificationId);
+            fileFormData.append("category1", category1);
+            fileFormData.append("category2", category2);
+            fileFormData.append("category3", category3);
+            fileFormData.append("category4", category4);
+            fileFormData.append("categoryID", categoryID);
+
+            /*updates the progress notification */
+            var updateProgressNotification = function (e, uniqueId) {
+                if (e.lengthComputable) {
+                    if (e.loaded !== e.total) {
+                        //Function to update the progress upload notification, the temp id fetches the correct notificaiton (incase there is more than one!).
+                        //The function also requires the progress information from the POST request (e).
+                        var bNot = BEACON.notifications.CORE.NotificationObjectById(uniqueId);
+                        bNot.Type = BEACON.notifications.types.INFORMATIONAL;
+                        BEACON.notifications.UI.UpdateNotificationsWithNewData = true;
+                        bNot.PercentageText = ''.concat(e.calculated.currentAmount.toFixed(2), e.calculated.unit, " / ", e.calculated.totalAmount.toFixed(2), e.calculated.unit);
+                        bNot.PercentageValue = e.calculated.percentage;
+                        CreateNotificationFromObject(bNot);
+
+                    }
+                }
+            }
+
+            /*generate progress notification ready for upload */
+            var progressNotification = new BEACON.notifications.notification(progressNotificationId, BEACON.notifications.types.INFORMATIONAL);
+            progressNotification.Sticky = true;
+            progressNotification.Stored = false;
+            progressNotification.PercentageTracker = true;
+            progressNotification.PercentageValue = 5;
+            progressNotification.NotificationTitle = fileName;
+            progressNotification.NotificationIcon = 'contentIcon br_icons br_' + fileExtension + ' iconSize_large bottomMargin_large topMargin_small';
+            CreateNotificationFromObject(progressNotification);
+
+            
+
+            BEACON.xhrFormPost('/sorce/api/images/posted_file', fileFormData, function (retVal) {
+                retVal = JSON.parse(retVal);
+                if (retVal.success == true) { //IF file is good
+
+                    BEACON.notifications.UI.DismissNotification(retVal.progressNotificationId);
+                  
+                    MediaLibrary.fireInfoNotification(BEACON.Labels.GetLabel("IMAGE_SCASE"), BEACON.Labels.GetLabel("IMAGE_UPLOAD_COMPLETE_SCASE"));
+                    top.MediaLibraryMultipleUploader.currentFile++;
+                    //If this is the last file then finish
+                    if (top.MediaLibraryMultipleUploader.currentFile + 1 > top.MediaLibraryMultipleUploader.allFiles.length) {
+                        if (CurrentInvalidFiles != "") {
+                            CurrentInvalidFiles = CurrentInvalidFiles.replace(/,\s*$/, "");
+                            alert(BEACON.Labels.GetLabel("FOLLOWING_FILES_INVALID_SCASE") + CurrentInvalidFiles)
+                            $(element).closest('.pi').find('.inlineAddContainer').slideToggle();
+                        
+                        }
+                        fileInput.val('');
+                        form.trigger('BEACON:WRKG:finish');
+                        BEACON.notifications.UI.DismissNotification(top.MediaLibraryMultipleUploader.multipleProgressNotificationID);
+                        BEACON.page.pageItemInstanceById(PIID).reload();
+                    } else {
+                        top.MediaLibrary.uploadNextImage(CurrentInvalidFiles);
+                    }
+
+                } else {  //IF file is bad 
+
+                    BEACON.notifications.UI.DismissNotification(retVal.progressNotificationId);
+                    MediaLibrary.fireInfoNotification(BEACON.Labels.GetLabel("IMAGE_SCASE"), BEACON.Labels.GetLabel("IMAGE_UPLOAD_FAILED_SCASE"));
+
+                    CurrentInvalidFiles = `${CurrentInvalidFiles} ${fileName}, `;
+                   
+                    top.MediaLibraryMultipleUploader.currentFile++;
+                    //If this is the last file then
+                    if (top.MediaLibraryMultipleUploader.currentFile + 1 > top.MediaLibraryMultipleUploader.allFiles.length) {
+        
+                        if (CurrentInvalidFiles != "") {
+                            CurrentInvalidFiles = CurrentInvalidFiles.replace(/,\s*$/, "");
+                            alert(BEACON.Labels.GetLabel("FOLLOWING_FILES_INVALID_SCASE") + CurrentInvalidFiles)
+                            $(element).closest('.pi').find('.inlineAddContainer').slideToggle();
+                          
+                        }
+                        fileInput.val('');
+                        form.trigger('BEACON:WRKG:finish');
+                        BEACON.notifications.UI.DismissNotification(top.MediaLibraryMultipleUploader.multipleProgressNotificationID);
+                        BEACON.page.pageItemInstanceById(PIID).reload();
+                    } else {
+                        top.MediaLibrary.uploadNextImage(CurrentInvalidFiles);
+                    }
+                    
+                }
+            }, this, updateProgressNotification, progressNotificationId);
+
+        
+            
+         //   $(element).closest('.pi').find('.inlineAddContainer').slideToggle();
+            
+            
+        } else {
+            //I'm somehow in here with no files left, kill the progress.
+            BEACON.notifications.UI.DismissNotification(top.MediaLibraryMultipleUploader.multipleProgressNotificationID);
+            $(element).closest('.pi').find('.inlineAddContainer').slideToggle();
+        }
+    }
+}

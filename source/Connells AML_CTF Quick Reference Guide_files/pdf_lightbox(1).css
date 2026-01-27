@@ -1,0 +1,151 @@
+/* this file contains CSS for both the feathrlight viewer, and for PDFJS. It's injected into the viewer iframe on load */
+
+:root {
+  /* override core PDFJS colors so they match client requirements */
+  --button-hover-color: rgba(102, 102, 103, 1);
+  --toolbar-icon-bg-color:#FFF;
+  --toolbar-icon-opacity:1;
+  
+  --EngageBannerHeight: 91px;
+  --LightBoxZIndex: 1147483647;
+  --FeatherlightMargin: 10px;
+  /* should match client's main background color from the banner or side menu */
+  --BannerColor: #04456A;
+  --FontColor: var(--toolbar-icon-bg-color);
+  
+  --ToolbarItemHeight: 28px;
+}
+
+@media screen and (max-width:899px) {
+  :root {
+    --EngageBannerHeight:45px;
+  }
+}
+
+
+.featherlight .featherlight-content {
+  border: 1px solid #000;
+}
+
+.PDF_LightBox_Preview {
+  width: calc(100vw - 20px);
+  max-width: 2100px;
+
+  height: calc(100vh - var(--EngageBannerHeight));
+  margin: 0 auto;
+  
+}
+
+
+.featherlight.featherlight-iframe {
+  /* standard height of header is 90px */
+  top: var(--EngageBannerHeight);
+}
+
+.featherlight.featherlight-iframe::before {
+  /* remove the slight padding so the lightbox sits directly below the site menus */
+  content: none;
+}
+.featherlight .featherlight-content {
+  border-radius: 7px;
+  margin-left: var(--FeatherlightMargin);
+  margin-right: var(--FeatherlightMargin);
+  max-height: calc(99vh - var(--EngageBannerHeight));
+  margin-bottom: var(--FeatherlightMargin);
+  overflow: hidden;
+}
+
+.featherlight .featherlight-close-icon {
+  /* set to match icons in the viewer */
+  line-height: var(--ToolbarItemHeight);
+  height: var(--ToolbarItemHeight);
+  width: var(--ToolbarItemHeight);
+  margin-top: 2px;
+  font-size: 1rem;
+  font-weight: 700;
+  right: 2px;
+  border-radius: 2px;
+  opacity: var(--toolbar-icon-opacity);
+}
+
+.featherlight .featherlight-close-icon:hover {
+  background-color: var(--button-hover-color);
+}
+
+.featherlight-close-icon.featherlight-close,
+.featherlight .featherlight-inner {
+  background-color: var(--BannerColor);
+  color: var(--toolbar-icon-bg-color);
+}
+
+/* drop lightboxe's z-index a little */
+.featherlight {
+  z-index: calc(var(--LightBoxZIndex) - 1);
+}
+
+.featherlight:last-of-type {
+  /* just float above the page */
+  background-color: transparent;
+}
+
+
+@media only screen and (max-width: 1024px) {
+  .featherlight .featherlight-content {
+      margin-left:0;
+      margin-right: 0;
+      max-height: 98%;
+      padding: 0;
+      
+  }
+}
+
+.NavLoadHidden,
+.PrimaryNav .Nav_LI,
+.DesktopPrimaryNav > .PrimaryNav .Nav_LI > div > .Nav_SubUL {
+  /* so that Engage controls can be shown */
+  z-index: var(--LightBoxZIndex);
+}
+
+#toolbarViewer {
+  background-color: var(--BannerColor);
+}
+
+/* set default toolbar state to not display, then display when ready using JS*/
+#toolbarViewerLeft,
+#toolbarViewerMiddle,
+#toolbarViewerRight {
+  display: none;
+}
+
+#pdf_loading_message {
+  color: var(--FontColor);
+  height: var(--ToolbarItemHeight);
+  display: inline-block;
+  font-weight: 700;
+  position: absolute;
+  left: calc(50% - var(--ToolbarItemHeight));
+  top: 50%;
+  transform: translate(-25%, -25%) scale(1);
+  /* box-shadow: 0 0 0 0 rgba(0, 0, 0, 1); */
+
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-25%, -25%) scale(0.90);
+  }
+
+  70% {
+    transform: translate(-25%, -25%) scale(1);
+  }
+
+  100% {
+    transform: translate(-25%, -25%) scale(0.90);
+  }
+}
+
+#pageNumber {
+  width: 20px;
+  font-size: 12px !important;
+}

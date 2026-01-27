@@ -1,0 +1,365 @@
+var CommentsAndRatings = (function () {
+
+
+    var ignoreClasses = '.rating,.whosLiked,.whosLikedList,.comments_count';
+    var whosLiked = '.whosLiked,.whosLikedList, .likes.like';
+    var whosLikedComments = '.whosLikedComments,.whosLikedListComments';
+    var selComments = 'div.commentsContainer';
+    const URL_GET_REACTIONS = '/sorce/beacon/PageItem/AppAspx/comments_ratings/rate.aspx?action=getReactionTypes';
+
+    function getReactions() {
+
+        BEACON.xhrGet(URL_GET_REACTIONS, doneAction,);
+
+
+    }
+
+    function doneAction(responseText) {
+
+        var reactionContainers = document.querySelectorAll('.moreReactionIcons');
+
+        reactionContainers.forEach((reactionContainer) => {
+            responseText.forEach(function (type) {
+
+                var sanitizedDescription = type.description
+                    .replace(/\s+/g, '_') // Replace spaces with underscores
+                    .replace(/[^\w\-]/g, ''); // Remove any non-alphanumeric characters except hyphens
+
+
+                // Create a class name by combining 'beacon' with sanitized description
+                var className = 'engage' + sanitizedDescription;
+
+
+                const reactions = reactionContainer.querySelectorAll('a');
+                reactions.forEach((reaction) => {
+                    reaction.addEventListener('mouseenter', function () {
+                        allLinks = reactionContainer.querySelectorAll('a');
+                        allLinks.forEach(function (link) {
+                            if (link !== reaction) {
+                                link.style.opacity = '0.5'; // Set opacity to 50% for other <a> elements
+                            }
+                        });
+                        reaction.style.opacity = '1'; // Ensure the hovered element remains at full opacity
+                    });
+
+                    reaction.addEventListener('mouseleave', function () {
+                        reactions.forEach(function (reaction) {
+                            reaction.style.opacity = '1'; // Reset opacity for all <a> elements
+                        });
+                    });
+                });
+
+                // Dynamically create styles for the ::before pseudo-element
+                var style = document.createElement('style');
+
+
+                // Add CSS rule targeting the ::before pseudo-element for the specific class
+                style.innerHTML = `
+        .${className}::before {
+            content: "";
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-right: 5px;
+            background: url('${type.image}'); /* Dynamic image URL */
+            background-size: contain;
+			cursor: pointer;
+        }
+    `;
+
+                // Append the style to the document's head so it takes effect
+                document.getElementsByTagName('head')[0].appendChild(style);
+                //iconElement.onclick
+            });
+        });
+
+    }
+
+    function showAllReactions(obj) {
+        var $obj = $(obj).closest('div.commentsContainer');
+        var $reactionsDiv = $obj.find('.moreReactionIcons');
+
+        if ($reactionsDiv.find('a').length <= 0) {
+            getReactions();
+        }
+
+
+        // Find all <a> elements with the class 'legend' inside $reactionDiv
+        const reactions = $reactionsDiv.find('a.legend-reaction');
+
+        // Filter only the elements where display is not 'none'
+        const visibleReactions = reactions.filter(function () {
+            return $(this).css('display') !== 'none';
+        });
+
+        $reactionsDiv.find('.likes.like').each(function () {
+
+            // Find the child div inside each 'likes like' div
+            var childDiv = $(this).children('div');
+
+            // Apply styles to the child div
+            childDiv.css({
+                'display': 'inline-flex',
+                'flex-wrap': 'wrap',
+                'align-items': 'center',
+                'padding-left': '15px',
+            });
+
+            if (visibleReactions.length === 5) {
+                // Set the width of the $reactionDiv to 200px
+                childDiv.css({
+                    'display': 'inline-flex',
+                    'flex-wrap': 'wrap',
+                    'align-items': 'center',
+                    'padding-left': '',
+                });
+
+            }
+
+
+        });
+
+        let isClicked = obj.getAttribute('data-clicked') === 'true'; // Get the current state
+
+        // Toggle the clicked state
+        obj.setAttribute('data-clicked', !isClicked);
+
+
+
+
+        const imageRect = obj.getBoundingClientRect();
+        // Calculate the position for the toolbox directly above the image
+        const toolboxTop = imageRect.top - $reactionsDiv[0].offsetHeight; // Position above the image
+        const toolboxLeft = imageRect.left + (imageRect.width / 2) - ($reactionsDiv[0].offsetWidth / 2); // Center above the image
+        // Toggle the visibility of the toolbox
+        if ($reactionsDiv) {
+
+            if ($reactionsDiv.css('display') === 'none') {
+                //if (!isClicked) {
+                var $otherReactionsDivs = $('.moreReactionIcons').not($reactionsDiv);
+                $otherReactionsDivs.css('display', 'none');
+                $reactionsDiv.css('opacity', '1'); // Show
+                $reactionsDiv.css('visibility', 'visible');
+                $reactionsDiv.css('display', 'block');
+                $reactionsDiv.css('padding', '2px');
+                // Set the toolbox position and make it visible
+            } else {
+                $reactionsDiv.css('opacity', '0');
+                $reactionsDiv.css('visibility', 'hidden');
+                $reactionsDiv.css('display', 'none');
+
+            }
+            // Check if the number of visible <a> elements is 5
+            if (visibleReactions.length === 5) {
+                // Set the width of the $reactionDiv to 200px
+                $reactionsDiv.css('width', 'auto');
+                $reactionsDiv.css('padding-left', '5px');
+            }
+
+
+        }
+        // Toggle the clicked state
+        isClicked = !isClicked; // Toggle the state
+    }
+
+    function addRefresh() {
+        $(document).on('BEACON:PII:reload', function (event) {
+
+            var $reactionsDivs = document.querySelectorAll('.moreReactionIcons');
+            $reactionsDivs.forEach(function (reactionsDiv) {
+                // Apply styles or actions to each element
+                reactionsDiv.style.display = 'none';
+            });
+
+            var classes = ignoreClasses;
+            var commentsPI = selComments;
+
+            //if the page element raising the event is a rating / comment block, stop
+            var $elem = $('#' + event.target.id);
+            if ($elem.is(ignoreClasses)) {
+                return;
+            }
+
+            //if element is a like only refesh the relevent nested page items
+            if ($elem.is('.like')) {
+                classes = whosLiked;
+            } else if ($elem.is('.likeComment')) {
+                commentsPI = '[pi_type=Comments]';
+                classes = whosLikedComments;
+            }
+
+            //if the thing raising the event sits in a comments block, refresh all of the ratings/likes/comments page items
+            if ($elem.length == 1) {
+                var $cRating = $elem.closest(commentsPI);
+                if ($cRating.length > 0) {
+                    $cRating.find(classes).filter('[pii="true"]').each(function () {
+                        BEACON.page.pageItemInstanceById($(this).prop('id')).filterInstant();
+                    });
+                }
+            }
+
+            //Close the reactions list if empty
+            var $container = $elem.closest(commentsPI);
+            var $reactList = $container.find('.likedList');
+
+            // Get all images with the class 'userReactionMainImg' within reactList
+            var $images = $reactList.find('.userReactionMainImg');
+
+            if ($images.length === 0) {             
+                $reactList.css('display', 'none');
+            }
+        });
+    }
+    function addWhosLiked() {
+        $(document).on('BEACON:PII:allUpdate', function (event) {
+            // add listener to add onclicks to more content thats loaded for specific page item
+            var $elem = $('#' + event.target.id).parent();
+            var $elems = $elem.find('.whosLiked,.whosLikedComments').not('.likedProcessed');
+            if ($elems.length > 0) {
+                $elems.each(function () {
+                    var $curElem = $(this);
+                    // check if nested button has already been wrapped 
+                    if ($curElem.parent().is('.likes')) {
+                        // if not check if nested button has content
+                        var $elemContent = $curElem.find("#" + $curElem.prop('id') + "_content");
+                        if ($elemContent.children().length > 0) {
+                            if ($curElem.is('.whosLiked')) {
+                                $curElem.addClass('likedProcessed');
+                                $curElem.wrap('<a onclick="CommentsAndLikes.toggleWhosLiked(this);" href="JavaScript:void(null);"></a>');
+                            } else if ($curElem.is('.whosLikedComments')) {
+                                $curElem.addClass('likedProcessed');
+                                $curElem.wrap('<a onclick="CommentsAndLikes.toggleWhosLikedComment(this);" href="JavaScript:void(null);"></a>');
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        $(document).on('BEACON:PAGE:ready', function (event) {
+            //find all whos liked nested items and add onclicks
+            var $doc = $(document);
+            var $elem = $doc.find('.whosLiked,.whosLikedComments');
+            if ($elem.length > 0) {
+                $elem.each(function () {
+                    var $curElem = $(this);
+                    // check if nested item has content
+                    var $elemContent = $curElem.find("#" + $curElem.prop('id') + "_content");
+                    if ($elemContent.children().length > 0) {
+                        if ($curElem.is('.whosLiked')) {
+                            $curElem.addClass('likedProcessed');
+                            $curElem.wrap('<a onclick="CommentsAndLikes.toggleWhosLiked(this);" href="JavaScript:void(null);"></a>');
+                        } else if ($curElem.is('.whosLikedComments')) {
+                            $curElem.addClass('likedProcessed');
+                            $curElem.wrap('<a onclick="CommentsAndLikes.toggleWhosLikedComment(this);" href="JavaScript:void(null);"></a>');
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    function showSPVComments() {
+        // if the SPV should show all comments, load them
+        if (!sessionStorage.getItem("spvComments")) return;
+        console.log('spv comments');
+        sessionStorage.removeItem("spvComments");
+        const bc = document.querySelector('a.beaconComment');
+        CommentsAndLikes.toggleComments(bc);
+        bc.scrollIntoView(true);
+
+
+    }
+    function showSPVWhosLiked() {
+        // if the SPV should show all comments, load them
+        if (!sessionStorage.getItem("spvWhosLiked")) return;
+        console.log('spv whosliked');
+        sessionStorage.removeItem("spvWhosLiked");
+        const wl = document.querySelector('a:has(div.whosLiked)');
+        CommentsAndLikes.toggleWhosLiked(wl);
+        wl.scrollIntoView(true);
+
+
+    }
+
+
+
+    return {
+        init: function () {
+            addRefresh();
+            addWhosLiked();
+            $(document).on('BEACON:PAGE:ready', function () {
+                showSPVComments();
+                showSPVWhosLiked();
+            });
+            window.addEventListener('load', function () {
+                getReactions();
+            })
+        },
+        showAllReactions: showAllReactions
+    };
+
+})();
+
+//don't need to wait for any readiness state
+CommentsAndRatings.init();
+
+var CommentsAndLikes = {
+    toggleWhosLiked: function (obj) {
+
+        //Find if page item is Top Three article
+        const $parentArticle = $(obj).closest('article[pi_type="Top three news with overlay"]');
+
+        console.log($parentArticle.length)
+
+        //if showing t3 page item, navigate to the SVP for interacting with whose liked list
+
+        if ($parentArticle.length > 0) {
+            const aHref = $parentArticle.find('a.t3SpvLink').prop('href')
+            sessionStorage.setItem('spvWhosLiked', 1);
+            document.location = aHref;
+            return
+        }
+
+        var $obj = $(obj).closest('div.commentsContainer');
+        var $mainObj = $obj.find('.likedList');
+        var $isOpenObj = $obj.find('.commentsLevel1');
+        if (!$mainObj.is(':visible')) {
+            $isOpenObj.slideUp();
+            $mainObj.slideDown();
+        } else {
+            $mainObj.slideUp();
+        }
+    },
+    toggleComments: function (obj) {
+        //Find if page item is Top Three article
+        const $parentArticle = $(obj).closest('article[pi_type="Top three news with overlay"]');
+
+        //if showing t3 page item, navigate to the SVP for interacting with comments
+        if ($parentArticle.length > 0) {
+            const aHref = $parentArticle.find('a.t3SpvLink').prop('href')
+            sessionStorage.setItem('spvComments', 1);
+            document.location = aHref;
+            return
+        }
+
+        // otherwise just toggle comments as normal
+        var $obj = $(obj).closest('div.commentsContainer');
+        var $mainObj = $obj.find('.commentsLevel1');
+        var $isOpenObj = $obj.find('.likedList');
+        if (!$mainObj.is(':visible')) {
+            $isOpenObj.slideUp();
+            $mainObj.slideDown();
+        } else {
+            $mainObj.slideUp();
+        }
+    },
+    toggleWhosLikedComment: function (obj) {
+        var $obj = $(obj).closest('div.contentContainer');
+        var $mainObj = $obj.find('.likedListComments');
+        if (!$mainObj.is(':visible')) {
+            $mainObj.slideDown();
+        } else {
+            $mainObj.slideUp();
+        }
+    }
+};

@@ -1,0 +1,438 @@
+﻿
+.dismissButton {
+    float: right;
+    margin: 10px;
+    margin-bottom: 5px;
+    font-size: 0.81rem;
+    border: none;
+    cursor: pointer;
+    vertical-align: middle;
+    /*background-color: #3b76a9;*/
+    border-radius: 3px;
+    line-height: 1.4;
+    /*color: #FFFFFF;*/
+    font-weight: 700;
+    padding: 6px 10px 6px 10px;
+}
+
+/* Blocking Notifiation */
+.notificationBlockingContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1111111; /* toobar is coded to 99999 z-index */
+}
+
+    .notificationBlockingContainer .notificationContent {
+        position: fixed;
+        top: 35%;
+        left: 50%;
+        margin-left: -200px;
+        width: 400px;
+        padding: 10px;
+        border: 1px solid black;
+        background-color: white;
+        -webkit-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+        -moz-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+        box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+    }
+
+.notificationContent .contentAuthorDate {
+    padding-top: 5px;
+}
+
+
+/* Intrusive Notifiation */
+.notificationIntrusiveContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99999; /* toobar is coded to 99999 z-index */
+}
+
+    .notificationIntrusiveContainer .notificationContent {
+        position: absolute;
+        top: 20%;
+        left: 0;
+        right: 0;
+        /* margin-top: 40%; */
+        margin: auto;
+        /* margin-top: 40%; */
+        overflow: hidden;
+        width: 400px;
+        max-width: 80%;
+        padding: 10px;
+        /*  border: 1px solid black; */
+        background-color: white;
+        -webkit-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+        -moz-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+        box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+    }
+
+    .notificationIntrusiveContainer .notificationClose {
+        float: right;
+        padding: 5px;
+        font-size: 15px;
+        color: #AFB2BD;
+    }
+
+/* Notifications Shade */
+
+.notificationsShadeContainer {
+    width: 330px;
+    display: none;
+    top: 45px;
+    right: 20px;
+    position: fixed;
+    background-color: #23242B;
+    border: 1px solid #4c4f56;
+    border-radius: 3px;
+    z-index: 1003;
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+    box-shadow: 2px 2px 10px 0px rgba(101,101,101,1);
+}
+
+    .notificationsShadeContainer:before {
+        content: "";
+        position: absolute;
+        top: -11px; /* value = - border-top-width - border-bottom-width */
+        left: 75px; /* controls horizontal position */
+        border-width: 0 11px 11px; /* vary these values to change the angle of the vertex */
+        border-style: solid;
+        border-color: #4c4f56 transparent;
+        /* reduce the damage in FF3.0 */
+        display: none; /* was block, but the little arrow is in the wrong place most of the time and looks wrong so removed.*/
+        width: 0;
+    }
+
+.notificationsShadeHeader {
+    /*min-height: 40px;*/
+    background-color: #2F313A;
+    color: #ffffff;
+    /*font-size:0.8rem;*/
+    padding: 10px;
+}
+
+.notificationsShadeFooter {
+    /*min-height: 20px;*/
+    background-color: #2F313A;
+    /*font-size:0.7rem;*/
+    text-align: right;
+    padding: 10px;
+}
+
+#nonotifications {
+    padding-top: 15px;
+    padding-bottom: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+#sorcenotifications {
+    padding-top: 15px;
+    padding-bottom: 10px;
+    padding-right: 10px;
+    width: 100%;
+    text-align: right;
+    font-size: 0.8rem;
+}
+
+.notificationsShadeContent {
+    height: 100%;
+    padding-left: 5px;
+    padding-bottom: 10px;
+    min-height: 40px;
+}
+
+.notificationsShadeFooter a, #sorcenotifications a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.81rem;
+}
+
+    .notificationsShadeFooter a:hover, #sorcenotifications a:hover {
+        text-decoration: underline;
+    }
+
+
+
+
+/* Notifications Glare */
+
+.notificationsGlareContainer {
+    width: 300px;
+    padding-right: 5px;
+    display: block;
+    top: 40px;
+    right: 0;
+    position: fixed;
+    z-index: 1003;
+}
+
+
+.notificationObject {
+    min-height: 80px;
+    margin-top: 10px;
+    margin-right: 5px;
+    padding-top: 5px;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    border-radius: 7px;
+}
+
+
+    .notificationObject .notificationClose {
+        float: right;
+        padding: 5px;
+    }
+
+
+.notificationsGlareContainer .notificationContent {
+    padding-right: 5px;
+}
+
+.notificationContent img {
+    width: 40px;
+    height: 40px;
+    float: left;
+    margin: 5px 10px 30px 0;
+}
+
+.notificationContent h4 {
+    /*font-size:0.9rem;*/
+    /*padding-left: 60px;*/
+    padding-left: 5px;
+    font-size: 0.94rem;
+    font-weight: 400;
+}
+
+.notificationContent p {
+    /*font-size:0.7rem;*/
+    /*padding: 5px;*/
+    /*padding-left: 60px;*/
+    padding-left: 5px;
+    padding-bottom: 5px;
+    padding-right: 5px;
+    line-height: 1.4;
+    white-space: normal;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    max-width: 89ch !important;
+}
+
+.notificationIntrusiveContainer .notificationContent p {
+    padding-left: 0;
+}
+
+.notificationContent p.smalltime {
+    /*padding-left: 60px;*/
+}
+
+.notificationSeparator {
+    border-bottom: 1px solid #CDCFD7;
+    margin-right: 5px;
+    margin-top: 10px;
+}
+
+/* Percentage */
+.notificationsPercentageHolder {
+    /*padding-left: 60px;*/
+    display: inline-block;
+    width: 95%;
+}
+
+.notificationsPercentageBar {
+    background-color: #dedde2;
+    height: 5px;
+    width: 100%;
+}
+
+.notificationsPercentageBarFill {
+    background-color: #54bbaa;
+    height: 5px;
+}
+
+.notificationPercentageText {
+    font-size: 0.7rem;
+    color: #ffffff;
+    width: 100%;
+    text-align: center;
+    padding-top: 5px;
+}
+
+.ViewAll .notificationsPercentageBar {
+    display: inline-block;
+    width: 50% !important;
+}
+
+.ViewAll .notificationPercentageText {
+    font-size: 0.7rem;
+    color: #000000;
+    display: inline-block;
+    width: 0 !important;
+    padding-left: 5px;
+}
+
+
+
+.notificationObject.ViewAll:hover {
+    background-color: #F6F6F6;
+}
+
+.ViewAll.unseen {
+    background-color: #FBFBFB;
+    font-weight: 700;
+}
+
+    .ViewAll.unseen h4 {
+        font-weight: 700;
+    }
+/*prevent the button from floating when on the view all page*/
+.notificationObject.ViewAll .dismissButton {
+    float: none;
+    margin-left: auto;
+    display: block;
+}
+
+
+
+/* Light Colour scheme - INCOMPLETE */
+.notificationObject.light {
+    background-color: #ffffff;
+    border: 1px solid #f1f1f3;
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(221,221,221,1);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(221,221,221,1);
+    box-shadow: 2px 2px 10px 0px rgba(221,221,221,1);
+}
+
+    .notificationObject.light .notificationClose {
+        color: #c8c9cd;
+    }
+
+        .notificationObject.light .notificationClose:hover {
+            color: #3b76a9;
+        }
+
+    .notificationObject.light .notificationContent h4 {
+        /* inherent from BeaconBase */
+    }
+
+    .notificationObject.light .notificationContent p {
+        /* inherent from BeaconBase */
+    }
+
+        .notificationObject.light .notificationContent p.smalltime {
+            color: #999999;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+
+
+
+/* Dark Colour scheme */
+
+.notificationBlockingContainer.dark {
+    background-color: rgba(99, 99, 99, 0.95);
+}
+
+.notificationIntrusiveContainer.dark {
+    background-color: rgba(255, 255, 255, 0.40);
+}
+
+.notificationObject.dark {
+    background-color: #37383d;
+    border: 1px solid #000000;
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(221,221,221,1);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(221,221,221,1);
+    box-shadow: 2px 2px 10px 0px rgba(221,221,221,1);
+}
+
+    .notificationObject.dark .notificationClose {
+        color: #c1c2c6;
+    }
+
+        .notificationObject.dark .notificationClose:hover {
+            color: #b8a02f;
+        }
+
+    .notificationObject.dark .notificationContent h4, .notificationObject.shade.sticky.dark .notificationContent h4 {
+        color: #f3f4f5;
+    }
+
+    .notificationObject.dark .notificationContent a h4, .notificationObject.shade.sticky.dark .notificationContent a h4 {
+        color: #f3f4f5 !important;
+    }
+
+        .notificationObject.dark .notificationContent a h4:hover, .notificationObject.shade.sticky.dark .notificationContent a h4:hover {
+            text-decoration: underline;
+        }
+
+    .notificationObject.dark .notificationContent p, .notificationObject.shade.sticky.dark .notificationContent p {
+        color: #8f949b;
+    }
+
+        .notificationObject.dark .notificationContent p.smalltime {
+            color: #747980 !important;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+/* Dark color scheme Notification Shade */
+.notificationsShadeContent .notificationObject {
+}
+
+#nonotifications {
+    color: #ffffff;
+}
+
+.notificationsShadeContent .notificationObject.dark {
+    background-color: transparent;
+    border: 0;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+}
+
+.notificationsShadeContent .notificationObject.sticky.dark {
+    background-color: #3b76a9;
+}
+
+.notificationsShadeContent .notificationObject.dark .notificationContent h4 {
+    color: #f3f4f5;
+}
+
+.notificationsShadeContent .notificationObject.dark .notificationContent p {
+    color: #8f949b;
+}
+
+.notificationObject.dark .notificationContent a, .notificationObject.dark .notificationContent a:visited, .notificationObject.dark .notificationContent a:hover, .notificationObject.dark .notificationContent a:active {
+    color: #669eca;
+}
+
+    .notificationObject.dark:hover .notificationContent a:hover, .notificationObject.dark .notificationContent a:hover {
+        text-decoration: underline;
+    }
+
+
+.notificationsShadeFooter a, .notificationsShadeHeader a {
+    color: #FFFFFF;
+}
+
+.dark .manyNotifications.contentIcon:before {
+    background-color: #CA4623;
+    color: #FFFFFF;
+    padding: 10px;
+}
+
+.dark .dismissButton {
+    background-color: #3b76a9; /* Green */
+    color: white;
+}
